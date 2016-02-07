@@ -1,1 +1,1 @@
-# BAMnexus
+# htsnexus

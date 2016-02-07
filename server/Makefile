@@ -1,9 +1,11 @@
+HERE:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+export PATH:=$(HERE)/node_modules/.bin:$(HERE)/runtime/node/bin:$(PATH)
+
 all: runtime/node/bin/node
 	runtime/node/bin/npm install
 
 test:
-	$(MAKE) all
-	PATH="runtime/node/bin:${PATH}" node_modules/.bin/_mocha --compilers _js:streamline/register test/test._js
+	_mocha --compilers _js:streamline/register test/test._js
 
 runtime/node/bin/node:
 	mkdir -p runtime/node

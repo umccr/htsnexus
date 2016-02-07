@@ -1,5 +1,5 @@
 "use strict";
-// create, configure, and start the BAMnexus Hapi.js server
+// create, configure, and start the htsnexus Hapi.js server
 
 const Hapi = require("hapi");
 const protocol = require("./protocol");
@@ -24,7 +24,7 @@ module.exports.Start = (config,_) => {
     });
 
     // route modules
-    server.register({register: require('./bam_redirect'), options: config}, _);
+    server.register({register: require('./hts_routes'), options: config}, _);
 
     // 404 catch-all
     server.route({

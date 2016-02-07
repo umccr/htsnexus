@@ -7,7 +7,7 @@ import sys
 
 DEFAULT_SERVER='http://localhost:48444'
 
-def query_bamnexus(namespace, accession, server=DEFAULT_SERVER):
+def query_htsnexus(namespace, accession, server=DEFAULT_SERVER):
     query_url = '/'.join([args.server, 'bam', args.namespace, args.accession])
     response = requests.get(query_url)
     if response.status_code != 200:
@@ -16,13 +16,13 @@ def query_bamnexus(namespace, accession, server=DEFAULT_SERVER):
         sys.exit(1)
     return response.json()
 
-parser = argparse.ArgumentParser(description='BAMnexus streaming client')
-parser.add_argument('--server', metavar='URL', type=str, default=DEFAULT_SERVER, help='BAMnexus server endpoint')
+parser = argparse.ArgumentParser(description='htsnexus streaming client')
+parser.add_argument('--server', metavar='URL', type=str, default=DEFAULT_SERVER, help='htsnexus server endpoint')
 parser.add_argument('namespace', type=str, help="accession namespace")
 parser.add_argument('accession', type=str, help="BAM accession")
 args = parser.parse_args()
 
-bam_info = query_bamnexus(args.namespace, args.accession, server=args.server)
+bam_info = query_htsnexus(args.namespace, args.accession, server=args.server)
 
 # TODO: print the bamHeaderBGZF iff the byte range beginning is non-zero
 # TODO: handle bam_info.httpRequestHeaders

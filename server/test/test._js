@@ -8,15 +8,17 @@ const Server = require("../src/server");
 
 // series of sql statements to create the test database
 var schema = [
-    "create table bam (_dbid text primary key, namespace text not null, accession text not null, \
-        url text not null, rangeIndexed integer not null, bamHeaderBGZF blob)",
-    "create unique index bamu on bam(namespace,accession)",
-    "create table bam_range_index(_dbid text not null, byteLo integer not null, byteHi integer not null, \
-        seq text, seqLo integer not null, seqHi integer not null)",
-    "create index bamri on bam_range_index(_dbid,seq,seqLo,seqHi)",
-    "create index bamri2 on bam_range_index(_dbid,seq,seqHi)",
-    "insert into bam values('ENCFF621SXE','ENCODE','ENCFF621SXE', \
-        'https://www.encodeproject.org/files/ENCFF621SXE/@@download/ENCFF621SXE.bam',0,null)"
+    "create table htsfiles (_dbid text primary key, format text not null, namespace text not null, \
+        accession text not null, url text not null)",
+    "create unique index htsfiles_namespace_accession on htsfiles(namespace,accession)",
+    "create table htsfiles_index_meta (_dbid text primary key, reference text not null, \
+        header text not null, bamHeaderBGZF blob not null, foreign key(_dbid) references htsfiles(_dbid))",
+    "create table htsfiles_index_entries (_dbid text not null, byteLo integer not null, byteHi integer not null, \
+        seq text, seqLo integer not null, seqHi integer not null, foreign key(_dbid) references htsfiles_index_meta(_dbid))",
+    "create index htsfiles_index1 on htsfiles_index_entries(_dbid,seq,seqLo,seqHi)",
+    "create index htsfiles_index2 on htsfiles_index_entries(_dbid,seq,seqHi)",
+    "insert into htsfiles values('ENCFF621SXE','bam','ENCODE','ENCFF621SXE', \
+        'https://www.encodeproject.org/files/ENCFF621SXE/@@download/ENCFF621SXE.bam')"
 ];
 
 // GET the protocol response from the server started for local testing
