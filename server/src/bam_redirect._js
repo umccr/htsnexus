@@ -3,15 +3,30 @@
 const protocol = require('./protocol');
 const Errors = protocol.Errors;
 
-function bam(request, _) {
-    return {message: "hello world"};
+class Redirector {
+    constructor(db) {
+        if (!db) {
+            throw new Error("bam_redirect: no SQLite3 database provided")
+        }
+        this.db = db;
+    }
+
+    bam(request, _) {
+        let info = this.db.get("select * from bam where namespace = ? and accession = ?",
+                               request.params.namespace, request.params.accession, _);
+        if (!info) {
+            throw new Errors.ResourceNotFound();
+        }
+        return {url: info.url};
+    }
 }
 
-module.exports.register = (server, options, next) => {
+module.exports.register = (server, config, next) => {
+    let redirector = new Redirector(config.db);
     server.route({
         method: 'GET',
         path:'/bam/{namespace}/{accession}', 
-        handler: protocol.handler(bam)
+        handler: protocol.handler((request, _) => redirector.bam(request, _))
     });
     return next();
 }

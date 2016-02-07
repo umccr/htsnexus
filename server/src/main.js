@@ -4,8 +4,13 @@
 require('streamline').register({});
 const Server = require('./server');
 const cmd = require("commander");
+const sqlite3 = require('sqlite3')
 
-Server.Start({port: 48444}, (err, server) => {
+var config = {
+    port: 48444,
+    db: new sqlite3.Database(':memory:')
+}
+Server.Start(config, (err, server) => {
     if (err) {
         throw err;
     }

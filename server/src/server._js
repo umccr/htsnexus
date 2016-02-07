@@ -24,7 +24,7 @@ module.exports.Start = (config,_) => {
     });
 
     // route modules
-    server.register(require('./bam_redirect'), _);
+    server.register({register: require('./bam_redirect'), options: config}, _);
 
     // 404 catch-all
     server.route({
