@@ -1,4 +1,6 @@
 "use strict";
+// BAMnexus server command-line entry point
+
 require('streamline').register({});
 const Server = require('./server');
 const cmd = require("commander");
