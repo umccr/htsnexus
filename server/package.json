@@ -1,0 +1,30 @@
+{
+  "name": "bamnexus",
+  "version": "0.0.1",
+  "description": "BAMnexus server",
+  "main": "server.js",
+  "scripts": {
+    "test": "make test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dnanexus-rnd/BAMnexus.git"
+  },
+  "author": "dnanexus-rnd",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/dnanexus-rnd/BAMnexus/issues"
+  },
+  "homepage": "https://github.com/dnanexus-rnd/BAMnexus#readme",
+  "dependencies": {
+    "babel": "5.8.35",
+    "streamline": "1.0.9",
+    "hapi": "13.0.0",
+    "sqlite3": "3.1.1",
+    "commander": "2.9.0",
+    "mocha": "2.4.5",
+    "request": "2.69.0",
+    "expect.js": "0.3.1",
+    "joi": "7.2.3"
+  }
+}
