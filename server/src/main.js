@@ -7,6 +7,24 @@ Server.Start({port: 48444}, (err, server) => {
     if (err) {
         throw err;
     }
-    console.log('Server running at:', server.info.uri);
+    server.on("response", (request) => {
+        let log = {
+            remoteAddress: request.info.remoteAddress,
+            path: request.path,
+            statusCode: request.response.statusCode,
+            duration: Date.now() - request.info.received
+        }
+        if (Object.keys(request.query).length > 0) {
+            log.query = request.query;
+        }
+        if (Object.keys(request.params).length > 0) {
+            log.params = request.params;
+        }
+        if (Object.keys(request.logDetails).length > 0) {
+            log.details = request.logDetails;
+        }
+        console.log(JSON.stringify(log));
+    });
+    console.log(JSON.stringify({message: 'Server running at: '+ server.info.uri}));
 });
 
