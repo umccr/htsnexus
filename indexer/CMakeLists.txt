@@ -32,8 +32,7 @@ set_property(TARGET libhts PROPERTY IMPORTED_LOCATION ${LIBHTS_A})
 
 execute_process(COMMAND git describe --tags --long --dirty --always
                 OUTPUT_VARIABLE GIT_REVISION OUTPUT_STRIP_TRAILING_WHITESPACE)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGIT_REVISION=\"\\\"${GIT_REVISION}\\\"\" -pthread -std=c99 -Wall")
-set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGIT_REVISION=\"\\\"${GIT_REVISION}\\\"\" -std=c99 -Wall")
 
 ################################
 # Normal Libraries & Executables
@@ -42,7 +41,7 @@ include_directories(src)
 
 add_executable(htsnexus_index_bam src/htsnexus_index_bam.c)
 add_dependencies(htsnexus_index_bam htslib)
-target_link_libraries(htsnexus_index_bam libhts)
+target_link_libraries(htsnexus_index_bam libhts sqlite3)
 
 install(TARGETS htsnexus_index_bam DESTINATION bin)
 

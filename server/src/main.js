@@ -8,7 +8,7 @@ const sqlite3 = require('sqlite3')
 
 var config = {
     port: 48444,
-    db: new sqlite3.Database(':memory:')
+    db: new sqlite3.Database(__dirname + '/../test/test.db')
 }
 Server.Start(config, (err, server) => {
     if (err) {
