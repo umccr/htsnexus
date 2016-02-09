@@ -13,14 +13,32 @@ class ProtocolError extends Error {
     }
 }
 
-class ResourceNotFound extends ProtocolError {
+class Unable extends ProtocolError {
     constructor(msg) {
         super(msg);
-        this.errorType = "ResourceNotFound";
+        this.errorType = "Unable";
+        this.statusCode = 406;
+    }
+}
+module.exports.Errors.Unable = Unable;
+
+class InvalidInput extends ProtocolError {
+    constructor(msg) {
+        super(msg);
+        this.errorType = "InvalidInput";
+        this.statusCode = 422;
+    }
+}
+module.exports.Errors.InvalidInput = InvalidInput;
+
+class NotFound extends ProtocolError {
+    constructor(msg) {
+        super(msg);
+        this.errorType = "NotFound";
         this.statusCode = 404;
     }
 }
-module.exports.Errors.ResourceNotFound = ResourceNotFound;
+module.exports.Errors.NotFound = NotFound;
 
 // wraps a route handler function f(request, _) for use with Hapi.js e.g.
 // server.route({method 'GET', path: '/hello', handler: protocol.handler(f)});

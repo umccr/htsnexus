@@ -4,7 +4,7 @@
 const Hapi = require("hapi");
 const protocol = require("./protocol");
 
-function handle404(request, _) { throw new protocol.Errors.ResourceNotFound(); }
+function handle404(request, _) { throw new protocol.Errors.NotFound(); }
 
 module.exports.Start = (config,_) => {
     const server = new Hapi.Server();
@@ -24,7 +24,7 @@ module.exports.Start = (config,_) => {
     });
 
     // route modules
-    server.register({register: require('./hts_routes'), options: config}, _);
+    server.register({register: require('./htsfiles_routes'), options: config}, _);
 
     // 404 catch-all
     server.route({
