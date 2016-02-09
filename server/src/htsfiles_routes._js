@@ -55,7 +55,7 @@ class HTSRoutes {
             }
             ans.reference = meta.reference;
             if (request.query['bamHeaderBGZF'] !== undefined) {
-                ans.bamHeaderBGZF = meta.bamHeaderBGZF;
+                ans.bamHeaderBGZF = meta.bamHeaderBGZF.toString('base64');
             }
 
             // calculate the byte range of BGZF blocks overlapping the query

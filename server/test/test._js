@@ -76,6 +76,10 @@ describe("Server", function() {
             expect(res.body.reference).to.be('GRCh37');
             expect(res.body.httpRequestHeaders.range).to.be('bytes=977196-1165272');
             expect(res.body.bamHeaderBGZF).to.be.a('string');
+
+            let buf = new Buffer(res.body.bamHeaderBGZF, 'base64');
+            expect(buf[0]).to.be(0x1f);
+            expect(buf[1]).to.be(0x8b);
         });
 
         it("should serve the byte range for a whole reference sequence", function(_) {

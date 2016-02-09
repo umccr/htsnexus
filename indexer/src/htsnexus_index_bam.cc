@@ -145,8 +145,10 @@ string generate_bam_header_bgzf(const bam_hdr_t* header) {
     hclose(hf);
     unlink(tmpfn);
 
-    // verify the EOF marker is there
-    if (len <= 28 || memcmp((char*)buf.get() + len - 28, "\037\213\010\4\0\0\0\0\0\377\6\0\102\103\2\0\033\0\3\0\0\0\0\0\0\0\0\0", 28)) {
+    // sanity-check the temp BAM file
+    if (len <= 28 ||
+        memcmp((unsigned char*)buf.get(), "\x1F\x8B", 2) ||
+        memcmp((unsigned char*)buf.get() + len - 28, "\037\213\010\4\0\0\0\0\0\377\6\0\102\103\2\0\033\0\3\0\0\0\0\0\0\0\0\0", 28)) {
         throw runtime_error("incomplete temp BAM file");
     }
 
@@ -235,7 +237,7 @@ unsigned bam_block_index(sqlite3* dbh, const char* reference, const char* dbid, 
     if (sqlite3_bind_text(stmt.get(), 1, dbid, -1, 0) ||
         sqlite3_bind_text(stmt.get(), 2, reference, -1, 0) ||
         sqlite3_bind_text(stmt.get(), 3, header->text, header->l_text, 0) ||
-        sqlite3_bind_text(stmt.get(), 4, bam_header_bgzf.c_str(), bam_header_bgzf.size(), 0)) {
+        sqlite3_bind_blob(stmt.get(), 4, bam_header_bgzf.c_str(), bam_header_bgzf.size(), 0)) {
         throw runtime_error("Failed to bind: insert into htsfiles_blocks_meta...");
     }
 
