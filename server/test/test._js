@@ -1,5 +1,4 @@
 "use strict";
-const Joi = require("joi");
 const expect = require("expect.js");
 const request = require("request");
 const url = require("url");

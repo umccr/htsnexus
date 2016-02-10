@@ -24,7 +24,6 @@
     "commander": "2.9.0",
     "mocha": "2.4.5",
     "request": "2.69.0",
-    "expect.js": "0.3.1",
-    "joi": "7.2.3"
+    "expect.js": "0.3.1"
   }
 }
