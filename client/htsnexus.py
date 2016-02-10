@@ -7,7 +7,7 @@ import sys
 import urllib
 import base64
 
-DEFAULT_SERVER='http://localhost:48444'
+DEFAULT_SERVER='http://htsnexus.rnd.dnanex.us:48444'
 
 def query_htsnexus(namespace, accession, server=DEFAULT_SERVER, genomic_range=None, verbose=False):
     query_url = '/'.join([args.server, 'bam', urllib.quote(args.namespace), urllib.quote(args.accession)])

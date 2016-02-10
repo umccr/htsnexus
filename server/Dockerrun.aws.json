@@ -1,0 +1,14 @@
+{
+  "AWSEBDockerrunVersion": "1",
+  "Image": {
+    "Name": "dnamlin/htsnexus",
+    "Update": "true"
+  },
+  "Ports": [
+    {
+      "ContainerPort": "48444"
+    }
+  ],
+  "Volumes": [],
+  "Logging": "/var/log"
+}
