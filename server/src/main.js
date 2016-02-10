@@ -3,12 +3,21 @@
 
 require('streamline').register({});
 const Server = require('./server');
-const cmd = require("commander");
+const program = require('commander');
 const sqlite3 = require('sqlite3')
+
+program._name = 'server.sh';
+program
+    .usage('[options] /path/to/database')
+    .option('-p, --port [port]', 'port to listen on [48444]', 48444)
+    .parse(process.argv);
+if (program.args.length != 1) {
+    program.help();
+}
 
 var config = {
     port: 48444,
-    db: new sqlite3.Database(__dirname + '/../test/test.db')
+    db: new sqlite3.Database(program.args[0], sqlite3.OPEN_READONLY)
 }
 Server.Start(config, (err, server) => {
     if (err) {
