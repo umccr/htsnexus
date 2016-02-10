@@ -129,7 +129,7 @@ string generate_bam_header_bgzf(const bam_hdr_t* header) {
     // tmpfd is now closed too...
 
     // read back the temp file contents
-    const size_t bufsize = 262144;
+    const size_t bufsize = 4194304;
     shared_ptr<void> buf(malloc(bufsize), &free);
     hFILE *hf = hopen(tmpfn, "r");
     if (!hf) {
@@ -139,7 +139,7 @@ string generate_bam_header_bgzf(const bam_hdr_t* header) {
     ssize_t len = hread(hf, buf.get(), bufsize);
     if (len<=0 || !hf->at_eof || hf->has_errno) {
         hclose(hf);
-        throw runtime_error("reading temp BAM file");
+        throw runtime_error("reading temp BAM file; is the header >" + to_string(bufsize) + " bytes?");
     }
 
     hclose(hf);
