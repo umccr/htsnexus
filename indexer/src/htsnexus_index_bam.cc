@@ -46,7 +46,7 @@ shared_ptr<sqlite3> open_database(const char* db) {
         throw runtime_error(msg.str());
     }
 
-    shared_ptr<sqlite3> dbh(raw, &sqlite3_close_v2);
+    shared_ptr<sqlite3> dbh(raw, &sqlite3_close);
 
     char *errmsg = 0;
     c = sqlite3_exec(dbh.get(), schema, 0, 0, &errmsg);

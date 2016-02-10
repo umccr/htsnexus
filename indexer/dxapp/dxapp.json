@@ -1,0 +1,53 @@
+{
+  "name": "htsnexus_index_bam",
+  "dxapi": "1.0.0",
+  "version": "0.0.1",
+  "inputSpec": [
+    {
+      "name": "namespace",
+      "class": "string"
+    },
+    {
+      "name": "reference",
+      "class": "string"
+    },
+    {
+      "name": "accessions",
+      "class": "array:string"
+    },
+    {
+      "name": "urls",
+      "class": "array:string"
+    },
+    {
+      "name": "output_name",
+      "class": "string",
+      "default": "htsnexus_index"
+    }
+  ],
+  "outputSpec": [
+    {
+      "name": "index_db",
+      "class": "file",
+      "type": "htsnexus_index"
+    }
+  ],
+  "runSpec": {
+    "interpreter": "bash",
+    "file": "src/code.sh",
+    "execDepends": [
+      {"name": "sqlite3"},
+      {"name": "aria2"},
+      {"name": "pigz"}
+    ],
+    "systemRequirements": {
+      "main": {
+        "instanceType": "mem2_hdd2_x2"
+      }
+    }
+  },
+  "access": {
+    "network": ["*"]
+  },
+  "authorizedUsers": []
+}
