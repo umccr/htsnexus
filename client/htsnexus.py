@@ -35,22 +35,22 @@ args = parser.parse_args()
 bam_ticket = query_htsnexus(args.namespace, args.accession, server=args.server,
                             genomic_range=args.range, verbose=args.verbose)
 
-if 'byteRange' in bam_ticket and bam_ticket['byteRange']['lo'] > 0:
+if 'byteRange' in bam_ticket and (bam_ticket['byteRange'] is None or bam_ticket['byteRange']['lo'] > 0):
     # if we're not reading from the beginning of the file, first emit the header block
     sys.stdout.write(base64.b64decode(bam_ticket['bamHeaderBGZF']))
+    sys.stdout.flush()
 
-sys.stdout.flush()
-
-# run curl to pipe the data
-curlcmd = ['curl','-LSs']
-if 'httpRequestHeaders' in bam_ticket:
-    for k, v in bam_ticket['httpRequestHeaders'].items():
-        curlcmd.append('-H')
-        curlcmd.append(str(k + ': ' + v))
-curlcmd.append(bam_ticket['url'])
-if args.verbose:
-    print >>sys.stderr, ('Piping: ' + str(curlcmd))
-subprocess.check_call(curlcmd)
+if 'byteRange' not in bam_ticket or bam_ticket['byteRange'] is not None:
+    # run curl to pipe the data
+    curlcmd = ['curl','-LSs']
+    if 'httpRequestHeaders' in bam_ticket:
+        for k, v in bam_ticket['httpRequestHeaders'].items():
+            curlcmd.append('-H')
+            curlcmd.append(str(k + ': ' + v))
+    curlcmd.append(bam_ticket['url'])
+    if args.verbose:
+        print >>sys.stderr, ('Piping: ' + str(curlcmd))
+    subprocess.check_call(curlcmd)
 
 if 'byteRange' in bam_ticket:
     # emit the EOF marker
