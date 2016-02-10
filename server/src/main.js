@@ -9,6 +9,7 @@ const sqlite3 = require('sqlite3')
 program._name = 'server.sh';
 program
     .usage('[options] /path/to/database')
+    .option('-b, --bind [bind]', 'interface to bind; set 0.0.0.0 to bind all [127.0.0.1]', '127.0.0.1')
     .option('-p, --port [port]', 'port to listen on [48444]', 48444)
     .parse(process.argv);
 if (program.args.length != 1) {
@@ -16,7 +17,8 @@ if (program.args.length != 1) {
 }
 
 var config = {
-    port: 48444,
+    bind: program.bind,
+    port: parseInt(program.port),
     db: new sqlite3.Database(program.args[0], sqlite3.OPEN_READONLY)
 }
 Server.Start(config, (err, server) => {

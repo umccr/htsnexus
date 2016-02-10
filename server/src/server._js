@@ -10,7 +10,7 @@ module.exports.Start = (config,_) => {
     const server = new Hapi.Server();
     
     server.connection({ 
-        host: 'localhost', 
+        address: config.bind || '127.0.0.1',
         port: config.port || 48444
     });
 
