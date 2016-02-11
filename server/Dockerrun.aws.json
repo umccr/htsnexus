@@ -9,6 +9,11 @@
       "ContainerPort": "48444"
     }
   ],
-  "Volumes": [],
+  "Volumes": [
+    {
+      "HostDirectory": "/var",
+      "ContainerDirectory": "/host_var"
+    }
+  ],
   "Logging": "/var/log"
 }
