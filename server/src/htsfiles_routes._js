@@ -31,6 +31,10 @@ class HTSRoutes {
     }
 
     bam(request, _) {
+        if (request.params.namespace == "lh3bamsvr") {
+            return this.bam_lh3bamsvr(request, _);
+        }
+
         let info = this.db.get("select * from htsfiles where format='bam' and namespace = ? and accession = ?",
                                request.params.namespace, request.params.accession, _);
         if (!info) {
@@ -58,8 +62,11 @@ class HTSRoutes {
                 ans.bamHeaderBGZF = meta.bamHeaderBGZF.toString('base64');
             }
 
-            // calculate the byte range of BGZF blocks overlapping the query
-            // genomic range
+            // Calculate the byte range of BGZF blocks overlapping the query
+            // genomic range. The query probably has to scan index entries for
+            // all blocks in the BAM file. In the future, we could implement a
+            // more efficient indexing strategy, such as UCSC binning, perhaps
+            // using SQL views.
             let rslt;
             if (genomicRange.seq !== '*') {
                 rslt = this.db.get("select count(*), min(byteLo), max(byteHi) from htsfiles_blocks where _dbid = ? and seq = ? and not (seqLo > ? or seqHi < ?)",
@@ -80,6 +87,24 @@ class HTSRoutes {
                 // empty result set
                 ans.byteRange = null;
             }
+        }
+
+        return ans;
+    }
+
+    // special handling for the "lh3bamsvr" namespace, which we redirect to
+    // Heng Li's bamsvr
+    bam_lh3bamsvr(request, _) {
+        let ans = {
+            namespace: request.params.namespace,
+            accession: request.params.accession,
+            url: "http://bamsvr.herokuapp.com/get?ac=" + encodeURIComponent(request.params.accession)
+        }
+
+        if (request.query.range) {
+            let genomicRange = parseGenomicRange(request.query.range);
+            ans.url += "&chr=" + encodeURIComponent(genomicRange.seq) +
+                       "&start=" + genomicRange.lo + "&end=" + genomicRange.hi;
         }
 
         return ans;

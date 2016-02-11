@@ -4,7 +4,7 @@ set -o pipefail
 cd "${HTSNEXUS_HOME}"
 source test/bash-tap-bootstrap
 
-plan tests 25
+plan tests 29
 
 # use htsnexus_index_bam to build the test database
 DBFN="${TMPDIR}/htsnexus_integration_test.db"
@@ -75,3 +75,11 @@ is "$output" "0" "read BAM empty range slice"
 output=$(client/htsnexus.py -s http://localhost:48444 -r 21 htsnexus_test NA12878 | samtools view -c -)
 is "$?" "0" "read BAM empty chromosome slice"
 is "$output" "0" "read BAM empty chromosome slice"
+
+output=$(client/htsnexus.py -s http://localhost:48444 lh3bamsvr EXA00001 | samtools view -c -)
+is "$?" "0" "read entire BAM from Heng Li's bamsvr"
+is "$output" "413102" "read entire BAM from Heng Li's bamsvr - record count"
+
+output=$(client/htsnexus.py -s http://localhost:48444 -r 11:10899000-10900000 lh3bamsvr EXA00001 | samtools view -c -)
+is "$?" "0" "read BAM slice from Heng Li's bamsvr"
+is "$output" "502" "read BAM slice from Heng Li's bamsvr - record count"

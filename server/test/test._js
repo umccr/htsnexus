@@ -118,6 +118,15 @@ describe("Server", function() {
             let res = req("/bam/ENCODE/ENCFF621SXE?range=1", _);
             expect(res.statusCode).to.be(406);
         });
+
+        it("should redirect to Heng Li's bamsvr", function(_) {
+            let res = req("/bam/lh3bamsvr/EXA00001", _);
+            expect(res.statusCode).to.be(200);
+
+            res = req("/bam/lh3bamsvr/EXA00001?range=11:10899000-10900000", _);
+            expect(res.statusCode).to.be(200);
+            expect(res.body.byteRange).to.be(undefined);
+        });
     });
 
     after(function(_) {
