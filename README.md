@@ -21,7 +21,7 @@ Here are a few things you can do with htsnexus and samtools:
 *Slice a genomic range out of a Platinum Genomes BAM*
 
 ```bash
-./htsnexus -r chr12:111766922-111817529 platinum NA12878 > NA12878_21.bam
+./htsnexus -r chr12:111766922-111817529 platinum NA12878 > NA12878_ALDH2.bam
 ```
 
 *Count reads on chr21 in an ENCODE ChIP-seq BAM*
