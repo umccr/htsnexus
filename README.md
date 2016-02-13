@@ -90,7 +90,7 @@ Success
 2043663
 ```
 
-The server tells the client to access the Platinum Genomes BAM file from EBI, but furthermore to access a specific *byte* range containing the desired genomic range. Thus the server handles the genomic range lookup, so the client doesn't need index files. (The server also gives the client the BAM header, making it a bit easier to deliver a well-formed BAM.)
+The server tells the client to access the Platinum Genomes BAM file from EBI, but furthermore to access a specific *byte* range containing the desired genomic range. Thus the server handles the genomic range lookup, so the client doesn't need index files. This will benefit genome browsers, which today sometimes have to fetch a ~100 MiB BAI file in order to take a far smaller BAM slice for visualization. (The server also gives the client the BAM header, making it a bit easier to deliver a well-formed BAM.)
 
 The htsnexus server maintains metadata and genomic range indices, but doesn't necessarily have to store or transport the data files themselves. This means it can be operated quite frugally, with heavy lifting offloaded to general-purpose services like S3. Architecturally, one htsnexus server could probably support thousands of clients engaged in a large scale analysis (not saying the current implementation is there). At the same time, should the need arise to generate the requested data on-the-fly, the server can instead direct the client to an endpoint providing that function, such as bamsvr above.
 
