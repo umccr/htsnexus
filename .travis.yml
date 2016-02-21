@@ -1,0 +1,16 @@
+dist: trusty
+sudo: true
+language: python
+
+addons:
+  apt:
+    packages:
+      - samtools
+
+before_install:
+  - sudo -H .travis/before_install.sh
+  - pip install requests
+
+script:
+  - make -C server all test
+  - test/htsnexus_integration_tests.sh
