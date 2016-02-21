@@ -295,6 +295,10 @@ unsigned bam_block_index(sqlite3* dbh, const char* reference, const char* dbid, 
             if (bgzf->block_address < last_block_address) {
                 throw runtime_error("Unexpected BGZF block address");
             }
+            if (bgzf->block_offset != 0) {
+                // it appears the last bam1_t record was split across two BGZF blocks
+                throw runtime_error("Unable to index this file due to bam1_t/BGZF block misalignment. Please report this file upstream.");
+            }
             block_ranges.push_back(make_tuple(tid, lo, hi));
             lo = hi = -1;
             for (const auto& r : block_ranges) {
