@@ -1,6 +1,8 @@
 # htsnexus
 
-**Experimental web service for accessing and slicing bam/cram/vcf.bgzip/bcf data**
+**Experimental web service for accessing and slicing bam/cram/vcf.bgzip/bcf data** <a href="https://travis-ci.org/dnanexus-rnd/htsnexus"><img src="https://travis-ci.org/dnanexus-rnd/htsnexus.svg?branch=master"/></a>
+
+This in an incubating proposal within the [GA4GH data working group](http://ga4gh.org/) towards a pragmatic web protocol for accessing large genomic datasets like reads and variants. Please see [this annotated slide deck](https://docs.google.com/a/dnanexus.com/presentation/d/1iATx04kwPz9V8-x_S4-eXmUbHJQt-AkOu4BL_xaE2nc/edit?usp=sharing) for further introduction and context.
 
 ### Try it out!
 
