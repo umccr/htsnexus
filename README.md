@@ -59,9 +59,9 @@ You can get a feel for how htsnexus works by running it in verbose mode:
 $ ./htsnexus -v 1000genomes_low_coverage NA20276 > /dev/null
 Query URL: http://htsnexus.rnd.dnanex.us/bam/1000genomes_low_coverage/NA20276
 Response: {
-  "url": "https://s3.amazonaws.com/1000genomes/phase3/data/NA20276/alignment/NA20276.mapped.ILLUMINA.bwa.ASW.low_coverage.20120522.bam",
   "namespace": "1000genomes_low_coverage",
-  "accession": "NA20276"
+  "accession": "NA20276",
+  "url": "https://s3.amazonaws.com/1000genomes/phase3/data/NA20276/alignment/NA20276.mapped.ILLUMINA.bwa.ASW.low_coverage.20120522.bam"
 }
 Piping: ['curl', '-LSs', u'https://s3.amazonaws.com/1000genomes/phase3/data/NA20276/alignment/NA20276.mapped.ILLUMINA.bwa.ASW.low_coverage.20120522.bam']
 ```
@@ -74,18 +74,19 @@ How about when we slice a genomic range? This is slightly more complicated.
 $ ./htsnexus -v -r chr12:111766922-111817529 platinum NA12878 | wc -c
 Query URL: http://htsnexus.rnd.dnanex.us/bam/platinum/NA12878?bamHeaderBGZF&range=chr12%3A111766922-111817529
 Response: {
-  "byteRange": {
-    "lo": 81273195157,
-    "hi": 81275238266
-  },
+  "namespace": "platinum",
+  "accession": "NA12878",
+  "url": "http://ftp.era.ebi.ac.uk/vol1/ERA172/ERA172924/bam/NA12878_S1.bam",
   "httpRequestHeaders": {
     "range": "bytes=81273195157-81275238265"
   },
   "reference": "hg19",
-  "bamHeaderBGZF": "[704 base64 characters]",
-  "url": "http://ftp.era.ebi.ac.uk/vol1/ERA172/ERA172924/bam/NA12878_S1.bam",
-  "namespace": "platinum",
-  "accession": "NA12878"
+  "prefix": "[704 base64 characters]",
+  "byteRange": {
+    "start": 81273195157,
+    "end": 81275238266
+  },
+  "suffix": "[40 base64 characters]"
 }
 Piping: ['curl', '-LSs', '-H', 'range: bytes=81273195157-81275238265', u'http://ftp.era.ebi.ac.uk/vol1/ERA172/ERA172924/bam/NA12878_S1.bam']
 Success

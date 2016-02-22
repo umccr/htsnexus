@@ -55,11 +55,12 @@ class HTSRoutes {
             let meta = this.db.get("select htsfiles._dbid, reference, bamHeaderBGZF from htsfiles, htsfiles_blocks_meta where htsfiles._dbid = htsfiles_blocks_meta._dbid and namespace = ? and accession = ?",
                                     ans.namespace, ans.accession, _);
             if (!meta) {
-                throw new Errors.Unable("No block-level index available for the requested file.");
+                throw new Errors.Unable("No genomic range index available for the requested file.");
             }
             ans.reference = meta.reference;
-            if (request.query['bamHeaderBGZF'] !== undefined) {
-                ans.bamHeaderBGZF = meta.bamHeaderBGZF.toString('base64');
+
+            if (request.query['noHeaderPrefix'] === undefined) {
+                ans.prefix = meta.bamHeaderBGZF.toString('base64');
             }
 
             // Calculate the byte range of BGZF blocks overlapping the query
@@ -76,17 +77,18 @@ class HTSRoutes {
                 rslt = this.db.get("select count(*), min(byteLo), max(byteHi) from htsfiles_blocks where _dbid = ? and seq is null",
                                    meta._dbid, _);
             }
+            ans.byteRange = null;
             if (rslt['count(*)']>0) {
                 let lo = rslt['min(byteLo)'];
                 let hi = rslt['max(byteHi)'];
                 // reporting byteRange as zero-based, half-open
-                ans.byteRange = { lo : lo, hi : hi };
+                ans.byteRange = { start : lo, end : hi };
                 // corresponding HTTP request header is zero-based, closed
                 ans.httpRequestHeaders = {range: "bytes=" + lo + "-" + (hi-1)};
-            } else {
-                // empty result set
-                ans.byteRange = null;
             }
+            // else: empty result set; ans.slice.byteRange remains null
+
+            ans.suffix = 'H4sIBAAAAAAA/wYAQkMCABsAAwAAAAAAAAAAAA=='; // BGZF EOF marker
         }
 
         return ans;

@@ -59,35 +59,52 @@ describe("Server", function() {
             expect(res.statusCode).to.be(200);
             expect(res.body.url).to.be.a('string');
             expect(res.body.reference).to.be('GRCh37');
-            expect(res.body.byteRange.lo).to.be(977196);
-            expect(res.body.byteRange.hi).to.be(1165273);
+
+            expect(res.body.prefix).to.be.a('string');
+            let buf = new Buffer(res.body.prefix, 'base64');
+            expect(buf[0]).to.be(0x1f);
+            expect(buf[1]).to.be(0x8b);
+
+            expect(res.body.byteRange.start).to.be(977196);
+            expect(res.body.byteRange.end).to.be(1165273);
             expect(res.body.httpRequestHeaders.range).to.be('bytes=977196-1165272');
-            expect(res.body.bamHeaderBGZF).to.be(undefined);
+
+            expect(res.body.suffix).to.be.a('string');
+            buf = new Buffer(res.body.suffix, 'base64');
+            expect(buf[0]).to.be(0x1f);
+            expect(buf[1]).to.be(0x8b);
+            expect(buf.length).to.be(28);
 
             res = req("/bam/htsnexus_test/NA12878?range=20:5000000-6020000", _);
             expect(res.body.httpRequestHeaders.range).to.be('bytes=977196-1165272');
         });
 
-        it("should serve the bamHeaderBGZF on request", function(_) {
-            let res = req("/bam/htsnexus_test/NA12878?range=20:6000000-6020000&bamHeaderBGZF", _);
+        it("should suppress BAM header slice prefix on request", function(_) {
+            let res = req("/bam/htsnexus_test/NA12878?range=20:6000000-6020000&noHeaderPrefix", _);
             expect(res.statusCode).to.be(200);
             expect(res.body.url).to.be.a('string');
             expect(res.body.reference).to.be('GRCh37');
             expect(res.body.httpRequestHeaders.range).to.be('bytes=977196-1165272');
-            expect(res.body.bamHeaderBGZF).to.be.a('string');
-
-            let buf = new Buffer(res.body.bamHeaderBGZF, 'base64');
-            expect(buf[0]).to.be(0x1f);
-            expect(buf[1]).to.be(0x8b);
+            expect(res.body.prefix).to.be(undefined);
         });
 
         it("should serve the byte range for a whole reference sequence", function(_) {
-            let res = req("/bam/htsnexus_test/NA12878?range=20&bamHeaderBGZF", _);
+            let res = req("/bam/htsnexus_test/NA12878?range=20", _);
             expect(res.statusCode).to.be(200);
             expect(res.body.url).to.be.a('string');
             expect(res.body.reference).to.be('GRCh37');
             expect(res.body.httpRequestHeaders.range).to.be('bytes=977196-2128165');
-            expect(res.body.bamHeaderBGZF).to.be.a('string');
+
+            expect(res.body.prefix).to.be.a('string');
+            let buf = new Buffer(res.body.prefix, 'base64');
+            expect(buf[0]).to.be(0x1f);
+            expect(buf[1]).to.be(0x8b);
+
+            expect(res.body.suffix).to.be.a('string');
+            buf = new Buffer(res.body.suffix, 'base64');
+            expect(buf[0]).to.be(0x1f);
+            expect(buf[1]).to.be(0x8b);
+            expect(buf.length).to.be(28);
         });
 
         it("should serve the byte range for unmapped reads", function(_) {
@@ -96,13 +113,34 @@ describe("Server", function() {
             expect(res.body.url).to.be.a('string');
             expect(res.body.reference).to.be('GRCh37');
             expect(res.body.httpRequestHeaders.range).to.be('bytes=2112141-2596770');
-            expect(res.body.bamHeaderBGZF).to.be(undefined);
+
+            expect(res.body.prefix).to.be.a('string');
+            let buf = new Buffer(res.body.prefix, 'base64');
+            expect(buf[0]).to.be(0x1f);
+            expect(buf[1]).to.be(0x8b);
+
+            expect(res.body.suffix).to.be.a('string');
+            buf = new Buffer(res.body.suffix, 'base64');
+            expect(buf[0]).to.be(0x1f);
+            expect(buf[1]).to.be(0x8b);
+            expect(buf.length).to.be(28);
         });
 
         it("should serve empty result sets", function(_) {
             let res = req("/bam/htsnexus_test/NA12878?range=20:1-10000", _);
             expect(res.statusCode).to.be(200);
             expect(res.body.byteRange).to.be(null);
+
+            expect(res.body.prefix).to.be.a('string');
+            let buf = new Buffer(res.body.prefix, 'base64');
+            expect(buf[0]).to.be(0x1f);
+            expect(buf[1]).to.be(0x8b);
+
+            expect(res.body.suffix).to.be.a('string');
+            buf = new Buffer(res.body.suffix, 'base64');
+            expect(buf[0]).to.be(0x1f);
+            expect(buf[1]).to.be(0x8b);
+            expect(buf.length).to.be(28);
 
             res = req("/bam/htsnexus_test/NA12878?range=XXX", _);
             expect(res.statusCode).to.be(200);
@@ -125,7 +163,9 @@ describe("Server", function() {
 
             res = req("/bam/lh3bamsvr/EXA00001?range=11:10899000-10900000", _);
             expect(res.statusCode).to.be(200);
+            expect(res.body.prefix).to.be(undefined);
             expect(res.body.byteRange).to.be(undefined);
+            expect(res.body.suffix).to.be(undefined);
         });
     });
 

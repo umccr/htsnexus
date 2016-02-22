@@ -17,7 +17,7 @@ def query_htsnexus(namespace, accession, server=DEFAULT_SERVER, genomic_range=No
     # construct query URL
     query_url = '/'.join([args.server, 'bam', urllib.quote(args.namespace), urllib.quote(args.accession)])
     if genomic_range:
-        query_url = query_url + '?bamHeaderBGZF&range=' + urllib.quote(genomic_range)
+        query_url = query_url + '?range=' + urllib.quote(genomic_range)
     if verbose:
         print >>sys.stderr, ('Query URL: ' + query_url)
     # issue request
@@ -30,9 +30,11 @@ def query_htsnexus(namespace, accession, server=DEFAULT_SERVER, genomic_range=No
     ans = response.json()
     if verbose:
         response_copy = dict(ans)
-        if 'bamHeaderBGZF' in response_copy:
-            # don't print big base64 buffer to console...
-            response_copy['bamHeaderBGZF'] = '[' + str(len(response_copy['bamHeaderBGZF'])) + ' base64 characters]'
+        # don't print big base64 buffers to console...
+        if 'prefix' in response_copy:
+            response_copy['prefix'] = '[' + str(len(response_copy['prefix'])) + ' base64 characters]'
+        if 'suffix' in response_copy:
+            response_copy['suffix'] = '[' + str(len(response_copy['suffix'])) + ' base64 characters]'
         print >>sys.stderr, ('Response: ' + json.dumps(response_copy, indent=2, separators=(',', ': ')))
     return ans
 
@@ -48,12 +50,13 @@ args = parser.parse_args()
 bam_ticket = query_htsnexus(args.namespace, args.accession, server=args.server,
                             genomic_range=args.range, verbose=args.verbose)
 
-# emit the header block (if we're not reading from the beginning of the file)
-if 'byteRange' in bam_ticket and (bam_ticket['byteRange'] is None or bam_ticket['byteRange']['lo'] > 0):
-    sys.stdout.write(base64.b64decode(bam_ticket['bamHeaderBGZF']))
+# emit the prefix blob, if the ticket so instructs us; this typically consists
+# of the BAM header when taking a genomic range slice.
+if 'prefix' in bam_ticket:
+    sys.stdout.write(base64.b64decode(bam_ticket['prefix']))
     sys.stdout.flush()
 
-# pipe the raw data (unless the result set is empty)
+# pipe the raw data (unless the result genomic range slice is empty)
 if 'byteRange' not in bam_ticket or bam_ticket['byteRange'] is not None:
     # delegate to curl to access the URL given in the ticket, including any
     # HTTP request headers htsnexus instructed us to supply.
@@ -67,9 +70,10 @@ if 'byteRange' not in bam_ticket or bam_ticket['byteRange'] is not None:
         print >>sys.stderr, ('Piping: ' + str(curlcmd))
     subprocess.check_call(curlcmd)
 
-# emit the EOF marker (unless we were reading the entire file)
-if 'byteRange' in bam_ticket:
-    sys.stdout.write('\037\213\010\4\0\0\0\0\0\377\6\0\102\103\2\0\033\0\3\0\0\0\0\0\0\0\0\0')
+# emit the suffix blob, if the ticket so instructs us; this typically consists
+# of the BGZF EOF marker when taking a genomic range slice.
+if 'suffix' in bam_ticket:
+    sys.stdout.write(base64.b64decode(bam_ticket['suffix']))
 
 if args.verbose:
     print >>sys.stderr, 'Success'
