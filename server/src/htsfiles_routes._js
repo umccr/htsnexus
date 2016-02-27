@@ -52,16 +52,12 @@ class HTSRoutes {
             let genomicRange = parseGenomicRange(request.query.range);
 
             // query for index metadata (will fail if we don't have the file indexed)
-            let meta = this.db.get("select htsfiles._dbid, reference, bamHeaderBGZF from htsfiles, htsfiles_blocks_meta where htsfiles._dbid = htsfiles_blocks_meta._dbid and namespace = ? and accession = ?",
+            let meta = this.db.get("select htsfiles._dbid, reference, slice_prefix, slice_suffix from htsfiles, htsfiles_blocks_meta where htsfiles._dbid = htsfiles_blocks_meta._dbid and namespace = ? and accession = ?",
                                     ans.namespace, ans.accession, _);
             if (!meta) {
                 throw new Errors.Unable("No genomic range index available for the requested file.");
             }
             ans.reference = meta.reference;
-
-            if (request.query['noHeaderPrefix'] === undefined) {
-                ans.prefix = meta.bamHeaderBGZF.toString('base64');
-            }
 
             // Calculate the byte range of BGZF blocks overlapping the query
             // genomic range. The query probably has to scan index entries for
@@ -77,6 +73,14 @@ class HTSRoutes {
                 rslt = this.db.get("select count(*), min(byteLo), max(byteHi) from htsfiles_blocks where _dbid = ? and seq is null",
                                    meta._dbid, _);
             }
+
+            // TODO: handle block_prefix too. it'll be slightly tricky to get
+            // block_prefix and block_suffix from the above aggregation query.
+            // http://stackoverflow.com/a/17319622
+            if (meta.slice_prefix !== null && request.query['noHeaderPrefix'] === undefined) {
+                ans.prefix = meta.slice_prefix.toString('base64');
+            }
+
             ans.byteRange = null;
             if (rslt['count(*)']>0) {
                 let lo = rslt['min(byteLo)'];
@@ -86,9 +90,12 @@ class HTSRoutes {
                 // corresponding HTTP request header is zero-based, closed
                 ans.httpRequestHeaders = {range: "bytes=" + lo + "-" + (hi-1)};
             }
-            // else: empty result set; ans.slice.byteRange remains null
+            // else: empty result set; ans.byteRange remains null
 
-            ans.suffix = 'H4sIBAAAAAAA/wYAQkMCABsAAwAAAAAAAAAAAA=='; // BGZF EOF marker
+            // TODO: handle block_suffix as well.
+            if (meta.slice_suffix !== null) {
+                ans.suffix = meta.slice_suffix.toString('base64');
+            }
         }
 
         return ans;

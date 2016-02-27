@@ -42,6 +42,7 @@ for file in files:
         seqHi = (-1 if seq is not None else None)
 
         # scan the index entries for this file & seq
+        # TODO: handle block_prefix and block_suffix
         for row in src_conn.execute('select byteLo, byteHi, seqLo, seqHi from htsfiles_blocks where _dbid=? and seq=? order by byteLo, byteHi', (file, seq)):
             byteLo = min(byteLo, row[0])
             byteHi = max(byteHi, row[1])
@@ -53,7 +54,7 @@ for file in files:
             # resolution, insert a consolidated destination index entry
             assert (byteHi > byteLo and (seq is None or seqHi > seqLo))
             if byteHi - byteLo >= args.resolution:
-                dest_cursor.execute('insert into htsfiles_blocks values(?,?,?,?,?,?)', (file, byteLo, byteHi, seq, seqLo, seqHi))
+                dest_cursor.execute('insert into htsfiles_blocks values(?,?,?,?,?,?,?,?)', (file, byteLo, byteHi, seq, seqLo, seqHi, None, None))
                 byteLo = sys.maxint
                 byteHi = -1
                 seqLo = (sys.maxint if seq is not None else None)
@@ -61,13 +62,13 @@ for file in files:
 
         # last entry
         if byteHi >= 0:
-            dest_cursor.execute('insert into htsfiles_blocks values(?,?,?,?,?,?)', (file, byteLo, byteHi, seq, seqLo, seqHi))
+            dest_cursor.execute('insert into htsfiles_blocks values(?,?,?,?,?,?,?,?)', (file, byteLo, byteHi, seq, seqLo, seqHi, None, None))
 
     # create a consolidated entry for the unmapped reads (if any)
     unmapped_query = 'select min(byteLo), max(byteHi) from htsfiles_blocks where _dbid=? and seq is null'
     unmapped = list(src_conn.execute(unmapped_query, (file,)))
     if len(unmapped) and unmapped[0][0] is not None:
-        dest_cursor.execute('insert into htsfiles_blocks values(?,?,?,?,?,?)', (file, unmapped[0][0], unmapped[0][1], None, None, None))
+        dest_cursor.execute('insert into htsfiles_blocks values(?,?,?,?,?,?,?,?)', (file, unmapped[0][0], unmapped[0][1], None, None, None, None, None))
 
 # sanity check concordance of the old and new indices
 check = "select min(seqLo), max(seqHi), min(byteLo), max(byteHi) from htsfiles_blocks group by _dbid, seq order by _dbid, seq"

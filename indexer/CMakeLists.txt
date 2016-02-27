@@ -23,8 +23,7 @@ ExternalProject_Add(htslib
     LOG_BUILD ON
   )
 ExternalProject_Get_Property(htslib source_dir)
-set(HTSLIB_INCLUDE_DIR ${source_dir}/htslib)
-include_directories(${HTSLIB_INCLUDE_DIR})
+include_directories(${source_dir})
 ExternalProject_Get_Property(htslib binary_dir)
 add_library(libhts STATIC IMPORTED)
 set(LIBHTS_A ${binary_dir}/libhts.a)
@@ -40,11 +39,15 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-lib
 ################################
 include_directories(src)
 
-add_executable(htsnexus_index_bam src/htsnexus_index_bam.cc)
+add_executable(htsnexus_index_bam src/htsnexus_index_bam.cc src/htsnexus_index_util.cc)
 add_dependencies(htsnexus_index_bam htslib)
 target_link_libraries(htsnexus_index_bam libhts sqlite3 z)
 
-install(TARGETS htsnexus_index_bam DESTINATION bin)
+add_executable(htsnexus_index_cram src/htsnexus_index_cram.cc src/htsnexus_index_util.cc)
+add_dependencies(htsnexus_index_cram htslib)
+target_link_libraries(htsnexus_index_cram libhts sqlite3 z)
+
+install(TARGETS htsnexus_index_bam htsnexus_index_cram DESTINATION bin)
 
 ################################
 # Testing

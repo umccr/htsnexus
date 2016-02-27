@@ -1,6 +1,6 @@
 // Add a BAM file to the htsnexus index database (creating the index if
 // needed). With some future refactoring, this could be generalized for other
-// formats (CRAM, VCF, BCF)
+// BGZF-based formats (VCF and BCF)
 
 #include <iostream>
 #include <memory>
@@ -12,93 +12,33 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <string.h>
-#include "bgzf.h"
-#include "sam.h"
-#include "hfile.h"
+#include "htslib/bgzf.h"
+#include "htslib/sam.h"
+#include "htslib/hfile.h"
 #include "sqlite3.h"
 
 using namespace std;
 
 /*************************************************************************************************/
 
-const char* schema = 
-    "begin;"
-    "create table if not exists htsfiles (_dbid text primary key, format text not null, \
-        namespace text not null, accession text not null, url text not null);"
-    "create unique index if not exists htsfiles_namespace_accession on htsfiles(namespace,accession);"
-    "create table if not exists htsfiles_blocks_meta (_dbid text primary key, reference text not null, \
-        header text not null, bamHeaderBGZF blob not null, \
-        foreign key(_dbid) references htsfiles(_dbid));"
-    "create table if not exists htsfiles_blocks (_dbid text not null, byteLo integer not null, \
-        byteHi integer not null, seq text, seqLo integer, seqHi integer, \
-        foreign key(_dbid) references htsfiles_index_meta(_dbid));"
-    "create index if not exists htsfiles_blocks_index1 on htsfiles_blocks(_dbid,seq,seqLo,seqHi);"
-    "create index if not exists htsfiles_blocks_index2 on htsfiles_blocks(_dbid,seq,seqHi);"
-    "commit";
-
-// open the htsnexus index database, or create it if necessary.
-shared_ptr<sqlite3> open_database(const char* db) {
-    sqlite3* raw;
-    int c = sqlite3_open_v2(db, &raw, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 0);
-    if (c) {
-        ostringstream msg;
-        msg << "Error opening/creating database " << db << ": " << sqlite3_errstr(c);
-        throw runtime_error(msg.str());
-    }
-
-    shared_ptr<sqlite3> dbh(raw, &sqlite3_close);
-
-    char *errmsg = 0;
-    c = sqlite3_exec(dbh.get(), schema, 0, 0, &errmsg);
-    if (c) {
-        ostringstream msg;
-        msg << "Error applying schema in database %s" << db;
-        if (errmsg) {
-            msg << ": " << errmsg;
-            sqlite3_free(errmsg);
-        }
-        throw runtime_error(msg.str());
-    }
-
-    return dbh;
-}
-
-// derive a database ID for this file; it should be sufficiently unique to
-// permit naive merging of databases indexing different sets of files
-string derive_dbid(const char* name_space, const char* accession, const char* fn, const char* url) {
-    // TODO: would be nice to use a hash of the file contents
-    ostringstream dbid;
-    dbid << name_space << ":" << accession;
-    return dbid.str();
-}
-
-// insert the core entry in the htsfiles table
+// htsnexus_index_util.cc prototypes
+shared_ptr<sqlite3> open_database(const char* db);
+string derive_dbid(const char* name_space, const char* accession, const char* format, const char* fn, const char* url);
 void insert_htsfile(sqlite3* dbh, const char* dbid, const char* format, const char* name_space,
-                    const char* accession, const char* url) {
+                    const char* accession, const char* url);
 
-    sqlite3_stmt *raw = 0;
-    if (sqlite3_prepare_v2(dbh, "insert into htsfiles values(?,?,?,?,?)", -1, &raw, 0)) {
-        throw runtime_error("Failed to prepare statement: insert into htsfiles...\n");
-    }
-    shared_ptr<sqlite3_stmt> stmt(raw, &sqlite3_finalize);
-
-    if (sqlite3_bind_text(stmt.get(), 1, dbid, -1, 0) ||
-        sqlite3_bind_text(stmt.get(), 2, format, -1, 0) ||
-        sqlite3_bind_text(stmt.get(), 3, name_space, -1, 0) ||
-        sqlite3_bind_text(stmt.get(), 4, accession, -1, 0) ||
-        sqlite3_bind_text(stmt.get(), 5, url, -1, 0)) {
-        throw runtime_error("Failed to bind: insert into htsfiles...");
-    }
-
-    int c = sqlite3_step(stmt.get());
-    if (c != SQLITE_DONE) {
-        ostringstream msg;
-        msg << "Error inserting htsfiles entry: " << sqlite3_errstr(c);
-        throw runtime_error(msg.str());
-    }
-}
+void insert_block_index_meta(sqlite3* dbh, const char* reference, const char* dbid,
+                             const string& header, const string& prefix, const string& suffix);
+shared_ptr<sqlite3_stmt> prepare_insert_block(sqlite3* dbh);
+void insert_block_index_entry(sqlite3_stmt* insert_block_stmt, const char* dbid,
+                              const vector<string>& target_names,
+                              int64_t block_lo, int64_t block_hi,
+                              int tid, int seq_lo, int seq_hi,
+                              const string& prefix, const string& suffix);
 
 /*************************************************************************************************/
+
+const string BAM_EOF("\037\213\010\4\0\0\0\0\0\377\6\0\102\103\2\0\033\0\3\0\0\0\0\0\0\0\0\0", 28);
 
 // Serialize the BAM header to a BGZF fragment, to which additional BGZF
 // blocks containing alignments can be appended. Here be an ugly hack...
@@ -131,18 +71,17 @@ string generate_bam_header_bgzf(const bam_hdr_t* header) {
     // read back the temp file contents
     const size_t bufsize = 4194304;
     shared_ptr<void> buf(malloc(bufsize), &free);
-    hFILE *hf = hopen(tmpfn, "r");
+    shared_ptr<hFILE> hf(hopen(tmpfn, "r"), &hclose);
     if (!hf) {
         throw runtime_error("opening temp BAM file");
     }
 
-    ssize_t len = hread(hf, buf.get(), bufsize);
+    ssize_t len = hread(hf.get(), buf.get(), bufsize);
     if (len<=0 || !hf->at_eof || hf->has_errno) {
-        hclose(hf);
         throw runtime_error("reading temp BAM file; is the header >" + to_string(bufsize) + " bytes?");
     }
 
-    hclose(hf);
+    hf.reset();
     unlink(tmpfn);
 
     // sanity-check the temp BAM file
@@ -154,54 +93,6 @@ string generate_bam_header_bgzf(const bam_hdr_t* header) {
 
     // return the header without the EOF marker
     return string((char*) buf.get(), len - 28);
-}
-
-// prepare the statement to insert an entry int htsfiles_blocks
-shared_ptr<sqlite3_stmt> prepare_insert_block(sqlite3* dbh) {
-    sqlite3_stmt *raw = 0;
-    if (sqlite3_prepare_v2(dbh, "insert into htsfiles_blocks values(?,?,?,?,?,?)", -1, &raw, 0)) {
-        throw runtime_error("Failed to prepare statement: insert into htsfiles_blocks...\n");
-    }
-    return shared_ptr<sqlite3_stmt>(raw, [](sqlite3_stmt* s) { sqlite3_finalize(s); });
-}
-
-// insert one entry in htsfiles_blocks, given the prepared statement
-void insert_block_index_entry(sqlite3_stmt* insert_block_stmt, const char* dbid, bam_hdr_t* header,
-                              int64_t block_lo, int64_t block_hi,
-                              int tid, int seq_lo, int seq_hi) {
-    if (tid < -1 || tid >= header->n_targets) {
-        throw new runtime_error("Invalid tid in BAM: " + to_string(tid));
-    }
-
-    if (sqlite3_bind_text(insert_block_stmt, 1, dbid, -1, 0) ||
-        sqlite3_bind_int64(insert_block_stmt, 2, block_lo) ||
-        sqlite3_bind_int64(insert_block_stmt, 3, block_hi)) {
-        throw runtime_error("Failed to bind: insert into htsfiles_blocks...");
-    }
-    if (tid != -1) {
-        if (sqlite3_bind_text(insert_block_stmt, 4, header->target_name[tid], -1, 0) ||
-            sqlite3_bind_int(insert_block_stmt, 5, seq_lo) ||
-            sqlite3_bind_int(insert_block_stmt, 6, seq_hi)) {
-            throw runtime_error("Failed to bind: insert into htsfiles_blocks...");
-        }
-    } else {
-        for (int i = 4; i <= 6; i++) {
-            if (sqlite3_bind_null(insert_block_stmt, i)) {
-                throw runtime_error("Failed to bind: insert into htsfiles_blocks...");
-            }
-        }
-    }
-
-    int c = sqlite3_step(insert_block_stmt);
-    if (c != SQLITE_DONE) {
-        ostringstream msg;
-        msg << "Error inserting htsfiles_blocks entry: " << sqlite3_errstr(c);
-        throw runtime_error(msg.str());
-    }
-
-    if (sqlite3_reset(insert_block_stmt)) {
-        throw runtime_error("Error resetting statement: insert into htsfiles_blocks...");
-    }
 }
 
 // populate the block-level index for the BAM file (htsfiles_blocks_meta and htsfiles_blocks)
@@ -219,34 +110,20 @@ unsigned bam_block_index(sqlite3* dbh, const char* reference, const char* dbid, 
     }
 
     // read the header
-    bam_hdr_t* _header = bam_hdr_read(bgzf.get());
-    if (!_header) {
+    shared_ptr<bam_hdr_t> header(bam_hdr_read(bgzf.get()), [](bam_hdr_t* h) { bam_hdr_destroy(h); });
+    if (!header) {
         throw runtime_error("reading BAM header from " + string(bamfile));
     }
-    shared_ptr<bam_hdr_t> header(_header, [](bam_hdr_t* h) { bam_hdr_destroy(h); });
+
+    vector<string> target_names;
+    for (int i = 0; i < header->n_targets; i++) {
+        target_names.push_back(string(header->target_name[i]));
+    }
 
     string bam_header_bgzf = generate_bam_header_bgzf(header.get());
 
     // insert the htsfiles_blocks_meta entry
-    sqlite3_stmt *raw = 0;
-    if (sqlite3_prepare_v2(dbh, "insert into htsfiles_blocks_meta values(?,?,?,?)", -1, &raw, 0)) {
-        throw runtime_error("Failed to prepare statement: insert into htsfiles_blocks_meta...\n");
-    }
-    shared_ptr<sqlite3_stmt> stmt(raw, &sqlite3_finalize);
-
-    if (sqlite3_bind_text(stmt.get(), 1, dbid, -1, 0) ||
-        sqlite3_bind_text(stmt.get(), 2, reference, -1, 0) ||
-        sqlite3_bind_text(stmt.get(), 3, header->text, header->l_text, 0) ||
-        sqlite3_bind_blob(stmt.get(), 4, bam_header_bgzf.c_str(), bam_header_bgzf.size(), 0)) {
-        throw runtime_error("Failed to bind: insert into htsfiles_blocks_meta...");
-    }
-
-    int c = sqlite3_step(stmt.get());
-    if (c != SQLITE_DONE) {
-        ostringstream msg;
-        msg << "Error inserting htsfiles_blocks_meta entry: " << sqlite3_errstr(c);
-        throw runtime_error(msg.str());
-    }
+    insert_block_index_meta(dbh, reference, dbid, string(header->text, header->l_text), bam_header_bgzf, BAM_EOF);
 
     // Now scan the BAM file to populate the block index. This is a bit
     // complicated because we're bookkeeping on two interleaved structures:
@@ -262,6 +139,7 @@ unsigned bam_block_index(sqlite3* dbh, const char* reference, const char* dbid, 
 
     last_block_address = bgzf->block_address;
     shared_ptr<bam1_t> record(bam_init1(), &free);
+    int c;
     while ((c = bam_read1(bgzf.get(), record.get())) > 0) {
         block_count++;
 
@@ -302,9 +180,10 @@ unsigned bam_block_index(sqlite3* dbh, const char* reference, const char* dbid, 
             block_ranges.push_back(make_tuple(tid, lo, hi));
             lo = hi = -1;
             for (const auto& r : block_ranges) {
-                insert_block_index_entry(insert_block_stmt.get(), dbid, header.get(),
+                insert_block_index_entry(insert_block_stmt.get(), dbid, target_names,
                                          last_block_address, bgzf->block_address,
-                                         get<0>(r), get<1>(r), get<2>(r));
+                                         get<0>(r), get<1>(r), get<2>(r),
+                                         string(), string());
             }
             block_ranges.clear();
             last_block_address = bgzf->block_address;
@@ -370,7 +249,7 @@ int main(int argc, char* argv[]) {
                *url = argv[optind+4];
 
     // determine the database ID for this file
-    string dbid = derive_dbid(name_space, accession, fn, url);
+    string dbid = derive_dbid(name_space, accession, "bam", fn, url);
 
     // open/create the database
     shared_ptr<sqlite3> dbh = open_database(db);
