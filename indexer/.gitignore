@@ -4,3 +4,4 @@ CMakeFiles
 cmake_install.cmake
 external
 htsnexus_index_bam
+/dxapp/resources/usr/local/bin/htsnexus_downsample_index.py

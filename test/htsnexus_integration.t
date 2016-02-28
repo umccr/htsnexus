@@ -4,7 +4,7 @@ set -o pipefail
 cd "${HTSNEXUS_HOME}"
 source test/bash-tap-bootstrap
 
-plan tests 29
+plan tests 30
 
 # use htsnexus_index_bam to build the test database
 DBFN="${TMPDIR}/htsnexus_integration_test.db"
@@ -17,6 +17,9 @@ is "$?" "0" "generate database"
 
 indexer/htsnexus_index_bam --reference GRCh37 "$DBFN" htsnexus_test NA12878 test/htsnexus_test_NA12878.bam "https://dl.dnanex.us/F/D/pjZ1Z8fpYzKj5Z8v3qXzVfffV1XzkXk4Kg4KzGBY/htsnexus_test_NA12878.bam"
 is "$?" "0" "index BAM"
+
+indexer/src/htsnexus_downsample_index.py "$DBFN"
+is "$?" "0" "downsample index"
 
 # start the server
 server_pid=""

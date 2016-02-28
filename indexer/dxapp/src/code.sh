@@ -36,7 +36,10 @@ main() {
         rm "$fn"
     done
 
-    id=$(pigz -c /home/dnanexus/out/index_db/htsnexus_index |
+    htsnexus_downsample_index.py /home/dnanexus/out/index_db/htsnexus_index
+    ls -l /home/dnanexus/out/index_db/
+
+    id=$(pigz -c /home/dnanexus/out/index_db/htsnexus_index.downsampled |
             dx upload --destination "${output_name}" --type htsnexus_index --brief -)
     dx-jobutil-add-output index_db "$id"
 }
