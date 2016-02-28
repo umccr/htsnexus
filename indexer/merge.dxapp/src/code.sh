@@ -24,8 +24,7 @@ main() {
         rm -f piece
     done
 
-    sqlite3 -batch -bail htsnexus_index "analyze"
-    sqlite3 -batch -bail htsnexus_index "vacuum"
+    sqlite3 -batch -bail htsnexus_index "vacuum; analyze"
 
     id=$(pigz -c htsnexus_index |
             dx upload --destination "${output_name}" --type htsnexus_index --brief -)

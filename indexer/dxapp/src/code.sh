@@ -1,5 +1,10 @@
 #!/bin/bash
 
+mktempdl() {
+    url="$1"
+    echo $(basename $(mktemp -p . --suffix $(printf ".%s" "${url##*.}")))
+}
+
 main() {
     set -ex -o pipefail
 
@@ -14,7 +19,7 @@ main() {
     dlfn=""
     for i in $(seq 0 $(expr $N - 1)); do
         if [ "$i" -eq 0 ]; then
-            dlfn=$(basename $(mktemp --suffix .bam))
+            dlfn=$(mktempdl "${urls[0]}")
             rm "$dlfn"
             aria2c -x 10 -j 10 -s 10 -o "$dlfn" "${urls[0]}" & dlpid=$!
         fi
@@ -22,9 +27,10 @@ main() {
 
         fn="$dlfn"
         if [ "$i" -lt "$(expr $N - 1)" ]; then
-            dlfn=$(basename $(mktemp --suffix .bam))
+            nexturl="${urls[$(expr $i + 1)]}"
+            dlfn=$(mktempdl "$nexturl")
             rm "$dlfn"
-            aria2c -x 10 -j 10 -s 10 -o "$dlfn" "${urls[$(expr $i + 1)]}" & dlpid=$!
+            aria2c -x 10 -j 10 -s 10 -o "$dlfn" "$nexturl" & dlpid=$!
         fi
 
         if ! grep -F "${accessions[$i]}" <(echo "${urls[$i]}"); then
@@ -32,14 +38,31 @@ main() {
             exit 1
         fi
 
-        htsnexus_index_bam --reference "$reference" /home/dnanexus/out/index_db/htsnexus_index "$namespace" "${accessions[$i]}" "$fn" "${urls[$i]}"
+        exe=""
+        case "${fn##*.}" in
+            bam)
+                exe=htsnexus_index_bam
+                ;;
+            cram)
+                exe=htsnexus_index_cram
+                ;;
+            *)
+                dx-jobutil-report-error "Unrecognized extension/format ${fn##*.}"
+                exit 1
+                ;;
+        esac
+
+        "$exe" --reference "$reference" /home/dnanexus/out/index_db/htsnexus_index "$namespace" "${accessions[$i]}" "$fn" "${urls[$i]}"
         rm "$fn"
     done
 
-    htsnexus_downsample_index.py /home/dnanexus/out/index_db/htsnexus_index
-    ls -l /home/dnanexus/out/index_db/
+    if [ "$downsample" == "true" ]; then
+        htsnexus_downsample_index.py /home/dnanexus/out/index_db/htsnexus_index
+        ls -s /home/dnanexus/out/index_db/
+        mv /home/dnanexus/out/index_db/htsnexus_index.downsampled /home/dnanexus/out/index_db/htsnexus_index
+    fi
 
-    id=$(pigz -c /home/dnanexus/out/index_db/htsnexus_index.downsampled |
+    id=$(pigz -c /home/dnanexus/out/index_db/htsnexus_index |
             dx upload --destination "${output_name}" --type htsnexus_index --brief -)
     dx-jobutil-add-output index_db "$id"
 }

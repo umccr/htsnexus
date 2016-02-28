@@ -1,5 +1,5 @@
 {
-  "name": "htsnexus_index_bam",
+  "name": "htsnexus_indexer",
   "dxapi": "1.0.0",
   "version": "0.0.1",
   "inputSpec": [
@@ -18,6 +18,11 @@
     {
       "name": "urls",
       "class": "array:string"
+    },
+    {
+      "name": "downsample",
+      "class": "boolean",
+      "default": false
     },
     {
       "name": "output_name",
