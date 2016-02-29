@@ -15,7 +15,7 @@ DEFAULT_SERVER='http://htsnexus.rnd.dnanex.us'
 # accessed (possibly with a byte range and auth headers).
 def query_htsnexus(namespace, accession, server=DEFAULT_SERVER, genomic_range=None, verbose=False):
     # construct query URL
-    query_url = '/'.join([args.server, 'bam', urllib.quote(args.namespace), urllib.quote(args.accession)])
+    query_url = '/'.join([args.server, urllib.quote(args.namespace), urllib.quote(args.accession), 'bam'])
     if genomic_range:
         query_url = query_url + '?range=' + urllib.quote(genomic_range)
     if verbose:

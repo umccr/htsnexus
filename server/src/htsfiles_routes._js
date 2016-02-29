@@ -30,13 +30,10 @@ class HTSRoutes {
         this.db = db;
     }
 
-    bam(request, _) {
-        if (request.params.namespace == "lh3bamsvr") {
-            return this.bam_lh3bamsvr(request, _);
-        }
-
-        let info = this.db.get("select * from htsfiles where format='bam' and namespace = ? and accession = ?",
-                               request.params.namespace, request.params.accession, _);
+    // serving/slicing logic common to format-specific routes
+    htsfiles_common(request, format, _) {
+        let info = this.db.get("select * from htsfiles where format = ? and namespace = ? and accession = ?",
+                               format, request.params.namespace, request.params.accession, _);
         if (!info) {
             throw new Errors.NotFound();
         }
@@ -44,6 +41,7 @@ class HTSRoutes {
         let ans = {
             namespace: request.params.namespace,
             accession: request.params.accession,
+            format: format,
             url: info.url
         };
 
@@ -52,8 +50,8 @@ class HTSRoutes {
             let genomicRange = parseGenomicRange(request.query.range);
 
             // query for index metadata (will fail if we don't have the file indexed)
-            let meta = this.db.get("select htsfiles._dbid, reference, slice_prefix, slice_suffix from htsfiles, htsfiles_blocks_meta where htsfiles._dbid = htsfiles_blocks_meta._dbid and namespace = ? and accession = ?",
-                                    ans.namespace, ans.accession, _);
+            let meta = this.db.get("select htsfiles._dbid, reference, slice_prefix, slice_suffix from htsfiles, htsfiles_blocks_meta where htsfiles._dbid = htsfiles_blocks_meta._dbid and format = ? and namespace = ? and accession = ?",
+                                    format, ans.namespace, ans.accession, _);
             if (!meta) {
                 throw new Errors.Unable("No genomic range index available for the requested file.");
             }
@@ -61,7 +59,7 @@ class HTSRoutes {
 
             // Calculate the byte range of BGZF blocks overlapping the query
             // genomic range. The query probably has to scan index entries for
-            // all blocks in the BAM file. In the future, we could implement a
+            // all blocks in the file. In the future, we could implement a
             // more efficient indexing strategy, such as UCSC binning, perhaps
             // using SQL views.
             let rslt;
@@ -101,6 +99,14 @@ class HTSRoutes {
         return ans;
     }
 
+    bam(request, _) {
+        if (request.params.namespace == "lh3bamsvr") {
+            return this.bam_lh3bamsvr(request, _);
+        }
+
+        return this.htsfiles_common(request, 'bam', _);
+    }
+
     // special handling for the "lh3bamsvr" namespace, which we redirect to
     // Heng Li's bamsvr
     bam_lh3bamsvr(request, _) {
@@ -118,14 +124,23 @@ class HTSRoutes {
 
         return ans;
     }
+
+    cram(request, _) {
+        return this.htsfiles_common(request, 'cram', _);
+    }
 }
 
 module.exports.register = (server, config, next) => {
     let impl = new HTSRoutes(config.db);
     server.route({
         method: 'GET',
-        path:'/bam/{namespace}/{accession}', 
+        path:'/{namespace}/{accession}/bam',
         handler: protocol.handler((request, _) => impl.bam(request, _))
+    });
+    server.route({
+        method: 'GET',
+        path:'/{namespace}/{accession}/cram',
+        handler: protocol.handler((request, _) => impl.cram(request, _))
     });
     return next();
 }
