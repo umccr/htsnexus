@@ -113,7 +113,8 @@ class HTSRoutes {
         let ans = {
             namespace: request.params.namespace,
             accession: request.params.accession,
-            url: "http://bamsvr.herokuapp.com/get?ac=" + encodeURIComponent(request.params.accession)
+            url: "http://bamsvr.herokuapp.com/get?ac=" + encodeURIComponent(request.params.accession),
+            format: "bam"
         }
 
         if (request.query.range) {

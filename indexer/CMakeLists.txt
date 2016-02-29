@@ -29,6 +29,19 @@ add_library(libhts STATIC IMPORTED)
 set(LIBHTS_A ${binary_dir}/libhts.a)
 set_property(TARGET libhts PROPERTY IMPORTED_LOCATION ${LIBHTS_A})
 
+# Also build samtools executable for use in integration tests
+ExternalProject_Add(samtools
+    URL https://github.com/samtools/samtools/archive/1.3.zip
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/external
+    CONFIGURE_COMMAND ""
+    BUILD_IN_SOURCE 1
+    BUILD_COMMAND make -j4
+    INSTALL_COMMAND ""
+    LOG_DOWNLOAD ON
+    LOG_BUILD ON
+  )
+add_dependencies(samtools htslib)
+
 execute_process(COMMAND git describe --tags --long --dirty --always
                 OUTPUT_VARIABLE GIT_REVISION OUTPUT_STRIP_TRAILING_WHITESPACE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGIT_REVISION=\"\\\"${GIT_REVISION}\\\"\" -pthread -std=c++11 -Wall")
@@ -44,7 +57,7 @@ add_dependencies(htsnexus_index_bam htslib)
 target_link_libraries(htsnexus_index_bam libhts sqlite3 z)
 
 add_executable(htsnexus_index_cram src/htsnexus_index_cram.cc src/htsnexus_index_util.cc)
-add_dependencies(htsnexus_index_cram htslib)
+add_dependencies(htsnexus_index_cram htslib samtools)
 target_link_libraries(htsnexus_index_cram libhts sqlite3 z)
 
 install(TARGETS htsnexus_index_bam htsnexus_index_cram DESTINATION bin)

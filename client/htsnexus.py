@@ -13,9 +13,9 @@ DEFAULT_SERVER='http://htsnexus.rnd.dnanex.us'
 # Contact the htsnexus server to request a "ticket" for a file or slice.
 # In particular the ticket will specify a URL at which the desired data can be
 # accessed (possibly with a byte range and auth headers).
-def query_htsnexus(namespace, accession, server=DEFAULT_SERVER, genomic_range=None, verbose=False):
+def query_htsnexus(namespace, accession, format, server=DEFAULT_SERVER, genomic_range=None, verbose=False):
     # construct query URL
-    query_url = '/'.join([args.server, urllib.quote(args.namespace), urllib.quote(args.accession), 'bam'])
+    query_url = '/'.join([args.server, urllib.quote(args.namespace), urllib.quote(args.accession), format])
     if genomic_range:
         query_url = query_url + '?range=' + urllib.quote(genomic_range)
     if verbose:
@@ -43,37 +43,38 @@ parser.add_argument('-s','--server', metavar='URL', type=str, default=DEFAULT_SE
 parser.add_argument('-r','--range', metavar='RANGE', type=str, help='target genomic range, seq:lo-hi or just seq')
 parser.add_argument('-v', '--verbose', action='store_true', help='verbose log to standard error')
 parser.add_argument('namespace', type=str, help="accession namespace")
-parser.add_argument('accession', type=str, help="BAM accession")
+parser.add_argument('accession', type=str, help="accession")
+parser.add_argument('format', type=str, nargs='?', default='bam', choices=['bam','cram'], help="format (default: bam)")
 args = parser.parse_args()
 
 # get ticket
-bam_ticket = query_htsnexus(args.namespace, args.accession, server=args.server,
-                            genomic_range=args.range, verbose=args.verbose)
+ticket = query_htsnexus(args.namespace, args.accession, args.format,
+                        server=args.server, genomic_range=args.range, verbose=args.verbose)
 
 # emit the prefix blob, if the ticket so instructs us; this typically consists
-# of the BAM header when taking a genomic range slice.
-if 'prefix' in bam_ticket:
-    sys.stdout.write(base64.b64decode(bam_ticket['prefix']))
+# of the file's header when taking a genomic range slice.
+if 'prefix' in ticket:
+    sys.stdout.write(base64.b64decode(ticket['prefix']))
     sys.stdout.flush()
 
 # pipe the raw data (unless the result genomic range slice is empty)
-if 'byteRange' not in bam_ticket or bam_ticket['byteRange'] is not None:
+if 'byteRange' not in ticket or ticket['byteRange'] is not None:
     # delegate to curl to access the URL given in the ticket, including any
     # HTTP request headers htsnexus instructed us to supply.
     curlcmd = ['curl','-LSs']
-    if 'httpRequestHeaders' in bam_ticket:
-        for k, v in bam_ticket['httpRequestHeaders'].items():
+    if 'httpRequestHeaders' in ticket:
+        for k, v in ticket['httpRequestHeaders'].items():
             curlcmd.append('-H')
             curlcmd.append(str(k + ': ' + v))
-    curlcmd.append(bam_ticket['url'])
+    curlcmd.append(ticket['url'])
     if args.verbose:
         print >>sys.stderr, ('Piping: ' + str(curlcmd))
     subprocess.check_call(curlcmd)
 
 # emit the suffix blob, if the ticket so instructs us; this typically consists
-# of the BGZF EOF marker when taking a genomic range slice.
-if 'suffix' in bam_ticket:
-    sys.stdout.write(base64.b64decode(bam_ticket['suffix']))
+# of the format-defined EOF marker when taking a genomic range slice.
+if 'suffix' in ticket:
+    sys.stdout.write(base64.b64decode(ticket['suffix']))
 
 if args.verbose:
     print >>sys.stderr, 'Success'
