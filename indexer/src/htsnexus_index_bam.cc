@@ -149,7 +149,9 @@ unsigned bam_block_index(sqlite3* dbh, const char* reference, const char* dbid, 
             if (record->core.tid != -1 && record->core.tid < tid) {
                 throw runtime_error("BAM not sorted (by sequence) at record " + to_string(block_count));
             }
-            block_ranges.push_back(make_tuple(tid, lo, hi));
+            if (lo > -1) {
+                block_ranges.push_back(make_tuple(tid, lo, hi));
+            }
             lo = hi = -1;
         }
         tid = record->core.tid;

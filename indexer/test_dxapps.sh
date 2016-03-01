@@ -37,3 +37,9 @@ cram_indexer_job2=$(dx run "${HTSNEXUS_PROJECT}:/htsnexus_indexer" --brief --pri
 cram_merge_job=$(dx run "${HTSNEXUS_PROJECT}:/htsnexus_index_merger" --brief --priority normal -y --destination "${HTSNEXUS_PROJECT}:/Attic/" --name test_dxapp_cram_merge -i htsnexus_index="${cram_indexer_job1}:index_db" -i htsnexus_index="${cram_indexer_job2}:index_db" -i output_name=test_dxapp_cram)
 
 dx run "${HTSNEXUS_PROJECT}:/htsnexus_index_merger" --priority normal -y --destination "${HTSNEXUS_PROJECT}:/Attic/" --name test_dxapp_merge -i htsnexus_index="${bam_merge_job}:index_db" -i htsnexus_index="${cram_merge_job}:index_db" -i output_name=test_dxapp
+
+# Regression test: HG00595 presents a corner case where a transition from one
+# tid to the next exactly corresponds to a BGZF block boundary. Previously
+# there was a bug which would create extraneous index entries, causing the
+# downsampler to fail.
+dx run "${HTSNEXUS_PROJECT}:/htsnexus_indexer" --brief --priority normal -y --destination "${HTSNEXUS_PROJECT}:/Attic/" --name test_dxapp_HG00595 -i namespace=test_dxapps -i reference=hs37d5 -i output_name=test_dxapp_HG00595 -i accessions=HG00595 -i urls=https://s3.amazonaws.com/1000genomes/phase3/data/HG00595/alignment/HG00595.mapped.ILLUMINA.bwa.CHS.low_coverage.20120522.bam -i downsample=true

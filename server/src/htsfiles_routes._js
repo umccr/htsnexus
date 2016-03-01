@@ -16,7 +16,7 @@ function parseGenomicRange(str) {
         lo: (m[2] === undefined ? 0 : parseInt(m[3])),
         hi: (m[2] === undefined ? MAX_SAFE_INTEGER : parseInt(m[4]))
     }
-    if (ans.hi < ans.lo) {
+    if (ans.lo < 0 || ans.hi < ans.lo) {
         throw new Errors.InvalidInput("invalid genomic range; hi<lo: " + str);
     }
     return ans;
