@@ -69,7 +69,6 @@ describe("Server", function() {
 
             expect(res.body.byteRange.start).to.be(977196);
             expect(res.body.byteRange.end).to.be(1165273);
-            expect(res.body.httpRequestHeaders.range).to.be('bytes=977196-1165272');
 
             expect(res.body.suffix).to.be.a('string');
             buf = new Buffer(res.body.suffix, 'base64');
@@ -78,7 +77,8 @@ describe("Server", function() {
             expect(buf.length).to.be(28);
 
             res = req("/htsnexus_test/NA12878/bam?range=20:5000000-6020000", _);
-            expect(res.body.httpRequestHeaders.range).to.be('bytes=977196-1165272');
+            expect(res.body.byteRange.start).to.be(977196);
+            expect(res.body.byteRange.end).to.be(1165273);
         });
 
         it("should suppress BAM header slice prefix on request", function(_) {
@@ -87,7 +87,8 @@ describe("Server", function() {
             expect(res.body.url).to.be.a('string');
             expect(res.body.format).to.be('bam');
             expect(res.body.reference).to.be('GRCh37');
-            expect(res.body.httpRequestHeaders.range).to.be('bytes=977196-1165272');
+            expect(res.body.byteRange.start).to.be(977196);
+            expect(res.body.byteRange.end).to.be(1165273);
             expect(res.body.prefix).to.be(undefined);
         });
 
@@ -97,7 +98,6 @@ describe("Server", function() {
             expect(res.body.url).to.be.a('string');
             expect(res.body.format).to.be('bam');
             expect(res.body.reference).to.be('GRCh37');
-            expect(res.body.httpRequestHeaders.range).to.be('bytes=977196-2128165');
 
             expect(res.body.prefix).to.be.a('string');
             let buf = new Buffer(res.body.prefix, 'base64');
@@ -117,7 +117,6 @@ describe("Server", function() {
             expect(res.body.url).to.be.a('string');
             expect(res.body.format).to.be('bam');
             expect(res.body.reference).to.be('GRCh37');
-            expect(res.body.httpRequestHeaders.range).to.be('bytes=2112141-2596770');
 
             expect(res.body.prefix).to.be.a('string');
             let buf = new Buffer(res.body.prefix, 'base64');
@@ -198,7 +197,6 @@ describe("Server", function() {
 
             expect(res.body.byteRange.start).to.be(617115);
             expect(res.body.byteRange.end).to.be(1094993);
-            expect(res.body.httpRequestHeaders.range).to.be('bytes=617115-1094992');
 
             expect(res.body.suffix).to.be.a('string');
             buf = new Buffer(res.body.suffix, 'base64');
@@ -207,7 +205,8 @@ describe("Server", function() {
             expect(buf.length).to.be(38);
 
             res = req("/htsnexus_test/NA12878/cram?range=20:5000000-6020000", _);
-            expect(res.body.httpRequestHeaders.range).to.be('bytes=617115-1094992');
+            expect(res.body.byteRange.start).to.be(617115);
+            expect(res.body.byteRange.end).to.be(1094993);
         });
 
         it("should suppress CRAM header slice prefix on request", function(_) {
@@ -216,7 +215,8 @@ describe("Server", function() {
             expect(res.body.url).to.be.a('string');
             expect(res.body.format).to.be('cram');
             expect(res.body.reference).to.be('GRCh37');
-            expect(res.body.httpRequestHeaders.range).to.be('bytes=617115-1094992');
+            expect(res.body.byteRange.start).to.be(617115);
+            expect(res.body.byteRange.end).to.be(1094993);
             expect(res.body.prefix).to.be(undefined);
         });
 
@@ -226,7 +226,8 @@ describe("Server", function() {
             expect(res.body.url).to.be.a('string');
             expect(res.body.format).to.be('cram');
             expect(res.body.reference).to.be('GRCh37');
-            expect(res.body.httpRequestHeaders.range).to.be('bytes=617115-1310236');
+            expect(res.body.byteRange.start).to.be(617115);
+            expect(res.body.byteRange.end).to.be(1310237);
 
             expect(res.body.prefix).to.be.a('string');
             let buf = new Buffer(res.body.prefix, 'base64');
@@ -245,7 +246,8 @@ describe("Server", function() {
             expect(res.body.url).to.be.a('string');
             expect(res.body.format).to.be('cram');
             expect(res.body.reference).to.be('GRCh37');
-            expect(res.body.httpRequestHeaders.range).to.be('bytes=1310237-1661487');
+            expect(res.body.byteRange.start).to.be(1310237);
+            expect(res.body.byteRange.end).to.be(1661488);
 
             expect(res.body.prefix).to.be.a('string');
             let buf = new Buffer(res.body.prefix, 'base64');

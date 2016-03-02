@@ -41,11 +41,11 @@ is "$?" "0" "server startup"
 samtools=indexer/external/src/samtools/samtools
 
 # perform some queries
-output=$(client/htsnexus.py -s http://localhost:48444 htsnexus_test NA12878 | $samtools view -c -)
+output=$(client/htsnexus.py -v -s http://localhost:48444 htsnexus_test NA12878 | $samtools view -c -)
 is "$?" "0" "read entire BAM"
 is "$output" "39918" "read entire BAM - record count"
 
-output=$(client/htsnexus.py -s http://localhost:48444 -r 20 htsnexus_test NA12878 | $samtools view -c -)
+output=$(client/htsnexus.py -v -s http://localhost:48444 -r 20 htsnexus_test NA12878 | $samtools view -c -)
 is "$?" "0" "read BAM chromosome slice"
 is "$output" "14955" "read BAM chromosome slice - approximate record count"
 
@@ -104,11 +104,11 @@ is "$output" "CRAM" "get CRAM"
 # automatically and cache it by default under ~/.cache/hts-ref/ which can be
 # overridden with the REF_CACHE env variable. TODO: it'd be nice to make test
 # CRAMs against a synthetic tiny reference genome...
-output=$(client/htsnexus.py -s http://localhost:48444 htsnexus_test NA12878 cram | $samtools view -c -)
+output=$(client/htsnexus.py -v -s http://localhost:48444 htsnexus_test NA12878 cram | $samtools view -c -)
 is "$?" "0" "read entire CRAM"
 is "$output" "39918" "read entire CRAM - record count"
 
-output=$(client/htsnexus.py -s http://localhost:48444 -r 20 htsnexus_test NA12878 cram | $samtools view -c -)
+output=$(client/htsnexus.py -v -s http://localhost:48444 -r 20 htsnexus_test NA12878 cram | $samtools view -c -)
 is "$?" "0" "read CRAM chromosome slice"
 is "$output" "14545" "read CRAM chromosome slice - record count"
 

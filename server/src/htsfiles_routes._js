@@ -42,7 +42,10 @@ class HTSRoutes {
             namespace: request.params.namespace,
             accession: request.params.accession,
             format: format,
-            url: info.url
+            url: info.url,
+            httpRequestHeaders: {
+                "referer": request.connection.info.protocol + '://' + request.info.host + request.url.path
+            }
         };
 
         // genomic range slicing
@@ -85,8 +88,6 @@ class HTSRoutes {
                 let hi = rslt['max(byteHi)'];
                 // reporting byteRange as zero-based, half-open
                 ans.byteRange = { start : lo, end : hi };
-                // corresponding HTTP request header is zero-based, closed
-                ans.httpRequestHeaders = {range: "bytes=" + lo + "-" + (hi-1)};
             }
             // else: empty result set; ans.byteRange remains null
 

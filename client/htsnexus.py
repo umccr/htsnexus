@@ -57,9 +57,14 @@ def get(namespace, accession, format, verbose=False, **kwargs):
             for k, v in ticket['httpRequestHeaders'].items():
                 curlcmd.append('-H')
                 curlcmd.append(str(k + ': ' + v))
+        # add the byte range header if we're slicing
+        if 'byteRange' in ticket:
+            curlcmd.append('-H')
+            curlcmd.append('range: bytes=' + str(ticket['byteRange']['start']) + '-' + str(ticket['byteRange']['end']-1))
         curlcmd.append(ticket['url'])
         if verbose:
             print >>sys.stderr, ('Piping: ' + str(curlcmd))
+            sys.stderr.flush()
         subprocess.check_call(curlcmd)
 
     # emit the suffix blob, if the ticket so instructs us; this typically consists
