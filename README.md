@@ -49,7 +49,7 @@ At the moment only BAM and CRAM are supported as proof-of-concept; VCF/BCF are c
 | namespace | accession | format |
 | --- | --- | --- |
 | **platinum** <br/> Illumina Platinum Genomes stored at EBI | NA12877 NA12878 NA12879 NA12881 NA12882 NA12883 NA12884 NA12885 NA12886 NA12887 NA12888 NA12889 NA12890 NA12891 NA12892 NA12893 | bam |
-| **ENCODE** <br/> ChIP-seq data released by the ENCODE DCC in Feb 2016 | ENCFF483JAH ENCFF493UYW ENCFF534KZJ ENCFF563WQV ENCFF572PHE ENCFF713QBG ENCFF777NDR ENCFF840IOC | bam |
+| **ENCODE** <br/> ChIP-seq data released by the ENCODE DCC in Jan 2016 | ENCFF014ABI ENCFF024MPE ENCFF070QUN ENCFF090MZL ENCFF124VCI ENCFF137WND ENCFF180VYU ENCFF308BKD ENCFF373VCV ENCFF465GPJ ENCFF572JRO ENCFF630NYB ENCFF743FRI ENCFF800DAY ENCFF862PIC ENCFF866OLR ENCFF904PIO ENCFF929AIJ ENCFF946BKE ENCFF951SEJ | bam |
 | **lh3bamsvr** <br/> Heng's examples | EXA00001 EXA00002 | bam |
 | **1000genomes_low_coverage** <br/> Low-coverage whole-genome sequencing from the 1000 Genomes Project | <a href="http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/">2,535 individual accessions</a> (example usage above) | bam, cram |
 
