@@ -140,12 +140,12 @@ module.exports.register = (server, config, next) => {
     let impl = new HTSRoutes(config.db);
     server.route({
         method: 'GET',
-        path:'/{namespace}/{accession}/bam',
+        path:'/v0/data/{namespace}/{accession}/bam',
         handler: protocol.handler((request, _) => impl.bam(request, _))
     });
     server.route({
         method: 'GET',
-        path:'/{namespace}/{accession}/cram',
+        path:'/v0/data/{namespace}/{accession}/cram',
         handler: protocol.handler((request, _) => impl.cram(request, _))
     });
     return next();

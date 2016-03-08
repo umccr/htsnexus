@@ -15,7 +15,7 @@ DEFAULT_SERVER='http://htsnexus.rnd.dnanex.us'
 # accessed (possibly with a byte range and auth headers).
 def get_ticket(namespace, accession, format, server=DEFAULT_SERVER, genomic_range=None, verbose=False):
     # construct query URL
-    query_url = '/'.join([server, urllib.quote(namespace), urllib.quote(accession), format])
+    query_url = '/'.join([server, 'v0', 'data', urllib.quote(namespace), urllib.quote(accession), format])
     if genomic_range:
         query_url = query_url + '?range=' + urllib.quote(genomic_range)
     if verbose:
