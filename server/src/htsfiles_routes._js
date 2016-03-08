@@ -48,6 +48,10 @@ class HTSRoutes {
             }
         };
 
+        if (typeof info.file_size === 'number') {
+            ans.size = info.file_size;
+        }
+
         // genomic range slicing
         if (request.query.range) {
             let genomicRange = parseGenomicRange(request.query.range);

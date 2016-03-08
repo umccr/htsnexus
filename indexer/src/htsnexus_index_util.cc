@@ -12,7 +12,7 @@ using namespace std;
 const char* schema =
     "begin;"
     "create table if not exists htsfiles (_dbid text primary key, format text not null, \
-        namespace text not null, accession text not null, url text not null);"
+        namespace text not null, accession text not null, url text not null, file_size integer);"
     "create unique index if not exists htsfiles_namespace_accession on htsfiles(namespace,accession,format);"
     "create table if not exists htsfiles_blocks_meta (_dbid text primary key, reference text not null, \
         header text not null, slice_prefix blob, slice_suffix blob, \
@@ -61,12 +61,13 @@ string derive_dbid(const char* name_space, const char* accession, const char* fo
     return dbid.str();
 }
 
-// insert the core entry in the htsfiles table
+// insert the core entry in the htsfiles table. set file_size to negative if
+// that information is not known.
 void insert_htsfile(sqlite3* dbh, const char* dbid, const char* format, const char* name_space,
-                    const char* accession, const char* url) {
+                    const char* accession, const char* url, ssize_t file_size) {
 
     sqlite3_stmt *raw = 0;
-    if (sqlite3_prepare_v2(dbh, "insert into htsfiles values(?,?,?,?,?)", -1, &raw, 0)) {
+    if (sqlite3_prepare_v2(dbh, "insert into htsfiles values(?,?,?,?,?,?)", -1, &raw, 0)) {
         throw runtime_error("Failed to prepare statement: insert into htsfiles...\n");
     }
     shared_ptr<sqlite3_stmt> stmt(raw, &sqlite3_finalize);
@@ -75,7 +76,9 @@ void insert_htsfile(sqlite3* dbh, const char* dbid, const char* format, const ch
         sqlite3_bind_text(stmt.get(), 2, format, -1, 0) ||
         sqlite3_bind_text(stmt.get(), 3, name_space, -1, 0) ||
         sqlite3_bind_text(stmt.get(), 4, accession, -1, 0) ||
-        sqlite3_bind_text(stmt.get(), 5, url, -1, 0)) {
+        sqlite3_bind_text(stmt.get(), 5, url, -1, 0) ||
+        (file_size >= 0 ? sqlite3_bind_int(stmt.get(), 6, file_size)
+                        : sqlite3_bind_null(stmt.get(), 6))) {
         throw runtime_error("Failed to bind: insert into htsfiles...");
     }
 
@@ -169,4 +172,3 @@ void insert_block_index_entry(sqlite3_stmt* insert_block_stmt, const char* dbid,
         throw runtime_error("Error resetting statement: insert into htsfiles_blocks...");
     }
 }
-

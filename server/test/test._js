@@ -53,6 +53,7 @@ describe("Server", function() {
             expect(res.statusCode).to.be(200);
             expect(res.body.url).to.be.a('string');
             expect(res.body.format).to.be('bam');
+            expect(res.body.size).to.be(undefined);
         });
 
         it("should serve the URL and byte range for a genomic range slice", function(_) {
@@ -61,6 +62,7 @@ describe("Server", function() {
             expect(res.body.url).to.be.a('string');
             expect(res.body.reference).to.be('GRCh37');
             expect(res.body.format).to.be('bam');
+            expect(res.body.size).to.be(2596799);
 
             expect(res.body.prefix).to.be.a('string');
             let buf = new Buffer(res.body.prefix, 'base64');
@@ -86,6 +88,7 @@ describe("Server", function() {
             expect(res.statusCode).to.be(200);
             expect(res.body.url).to.be.a('string');
             expect(res.body.format).to.be('bam');
+            expect(res.body.size).to.be(2596799);
             expect(res.body.reference).to.be('GRCh37');
             expect(res.body.byteRange.start).to.be(977196);
             expect(res.body.byteRange.end).to.be(1165273);
@@ -182,6 +185,7 @@ describe("Server", function() {
             expect(res.statusCode).to.be(200);
             expect(res.body.url).to.be.a('string');
             expect(res.body.format).to.be('cram');
+            expect(res.body.size).to.be(1661526);
         });
 
         it("should serve the URL and byte range for a genomic range slice", function(_) {
@@ -190,6 +194,7 @@ describe("Server", function() {
             expect(res.body.url).to.be.a('string');
             expect(res.body.format).to.be('cram');
             expect(res.body.reference).to.be('GRCh37');
+            expect(res.body.size).to.be(1661526);
 
             expect(res.body.prefix).to.be.a('string');
             let buf = new Buffer(res.body.prefix, 'base64');
@@ -214,6 +219,7 @@ describe("Server", function() {
             expect(res.statusCode).to.be(200);
             expect(res.body.url).to.be.a('string');
             expect(res.body.format).to.be('cram');
+            expect(res.body.size).to.be(1661526);
             expect(res.body.reference).to.be('GRCh37');
             expect(res.body.byteRange.start).to.be(617115);
             expect(res.body.byteRange.end).to.be(1094993);
