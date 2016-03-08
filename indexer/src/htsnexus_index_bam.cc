@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
 #include "htslib/bgzf.h"
@@ -25,7 +26,7 @@ using namespace std;
 shared_ptr<sqlite3> open_database(const char* db);
 string derive_dbid(const char* name_space, const char* accession, const char* format, const char* fn, const char* url);
 void insert_htsfile(sqlite3* dbh, const char* dbid, const char* format, const char* name_space,
-                    const char* accession, const char* url);
+                    const char* accession, const char* url, ssize_t file_size);
 
 void insert_block_index_meta(sqlite3* dbh, const char* reference, const char* dbid,
                              const string& header, const string& prefix, const string& suffix);
@@ -123,7 +124,8 @@ unsigned bam_block_index(sqlite3* dbh, const char* reference, const char* dbid, 
     string bam_header_bgzf = generate_bam_header_bgzf(header.get());
 
     // insert the htsfiles_blocks_meta entry
-    insert_block_index_meta(dbh, reference, dbid, string(header->text, header->l_text), bam_header_bgzf, BAM_EOF);
+    insert_block_index_meta(dbh, reference, dbid, string(header->text, header->l_text),
+                            bam_header_bgzf, BAM_EOF);
 
     // Now scan the BAM file to populate the block index. This is a bit
     // complicated because we're bookkeeping on two interleaved structures:
@@ -250,6 +252,15 @@ int main(int argc, char* argv[]) {
                *fn = argv[optind+3],
                *url = argv[optind+4];
 
+    // get the file size
+    ssize_t file_size = -1;
+    struct stat fnstat;
+    if (stat(fn, &fnstat) == 0) {
+        file_size = fnstat.st_size;
+    } else {
+        cerr << "WARNING: couldn't open " << fn << ", recording unknown file size." << endl;
+    }
+
     // determine the database ID for this file
     string dbid = derive_dbid(name_space, accession, "bam", fn, url);
 
@@ -262,7 +273,7 @@ int main(int argc, char* argv[]) {
     }
 
     // insert the basic htsfiles entry
-    insert_htsfile(dbh.get(), dbid.c_str(), "bam", name_space, accession, url);
+    insert_htsfile(dbh.get(), dbid.c_str(), "bam", name_space, accession, url, file_size);
 
     if (!reference.empty()) {
         // build the block-level range index
