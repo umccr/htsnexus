@@ -141,12 +141,14 @@ module.exports.register = (server, config, next) => {
     server.route({
         method: 'GET',
         path:'/v0/data/{namespace}/{accession}/bam',
-        handler: protocol.handler((request, _) => impl.bam(request, _))
+        handler: protocol.handler((request, _) => impl.bam(request, _)),
+        config: {cors: true}
     });
     server.route({
         method: 'GET',
         path:'/v0/data/{namespace}/{accession}/cram',
-        handler: protocol.handler((request, _) => impl.cram(request, _))
+        handler: protocol.handler((request, _) => impl.cram(request, _)),
+        config: {cors: true}
     });
     return next();
 }

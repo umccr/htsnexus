@@ -7,7 +7,11 @@ const Server = require("../src/server");
 
 // GET the protocol response from the server started for local testing
 function req(route, cb) {
-    request("http://localhost:48444/v0" + route, (error, response, body) => {
+    let rq = {
+        url: "http://localhost:48444/v0" + route,
+        headers: {origin: "https://www.dnanexus.com"}
+    };
+    request(rq, (error, response, body) => {
         if (error) {
             return cb(error);
         }
@@ -51,6 +55,7 @@ describe("Server", function() {
         it("should serve the URL for a BAM", function(_) {
             let res = req("/data/ENCODE/ENCFF621SXE/bam", _);
             expect(res.statusCode).to.be(200);
+            expect(res.headers['access-control-allow-origin']).to.be('https://www.dnanexus.com');
             expect(res.body.url).to.be.a('string');
             expect(res.body.format).to.be('bam');
             expect(res.body.size).to.be(undefined);
@@ -183,6 +188,7 @@ describe("Server", function() {
         it("should serve the URL for a CRAM", function(_) {
             let res = req("/data/htsnexus_test/NA12878/cram", _);
             expect(res.statusCode).to.be(200);
+            expect(res.headers['access-control-allow-origin']).to.be('https://www.dnanexus.com');
             expect(res.body.url).to.be.a('string');
             expect(res.body.format).to.be('cram');
             expect(res.body.size).to.be(1661526);
