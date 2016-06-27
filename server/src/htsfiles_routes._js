@@ -42,14 +42,14 @@ class HTSRoutes {
             accession: request.params.accession,
             // format was given to us in lowercase for legacy reasons (reuse v0 database for v1 server)
             format: format.toUpperCase(),
-            url: info.url,
+            urls: [info.url],
             httpRequestHeaders: {
                 "referer": request.connection.info.protocol + '://' + request.info.host + request.url.path
             }
         };
 
         if (typeof info.file_size === 'number') {
-            ans.size = info.file_size;
+            ans.byteRanges = [{ start : 0, end : info.file_size }];
         }
 
         // genomic range slicing
@@ -86,14 +86,16 @@ class HTSRoutes {
                 ans.prefix = meta.slice_prefix.toString('base64');
             }
 
-            ans.byteRange = null;
             if (rslt['count(*)']>0) {
                 let lo = rslt['min(byteLo)'];
                 let hi = rslt['max(byteHi)'];
                 // reporting byteRange as zero-based, half-open
-                ans.byteRange = { start : lo, end : hi };
+                ans.byteRanges = [{ start : lo, end : hi }];
+            } else {
+                // empty result set
+                ans.urls = [];
+                delete ans.byteRanges;
             }
-            // else: empty result set; ans.byteRange remains null
 
             // TODO: handle block_suffix as well.
             if (meta.slice_suffix !== null) {
@@ -122,14 +124,14 @@ class HTSRoutes {
         let ans = {
             namespace: request.params.namespace,
             accession: request.params.accession,
-            url: "http://bamsvr.herokuapp.com/get?ac=" + encodeURIComponent(request.params.accession),
+            urls: ["http://bamsvr.herokuapp.com/get?ac=" + encodeURIComponent(request.params.accession)],
             format: "BAM"
         }
 
        if (request.query.referenceName) {
             let genomicRange = resolveGenomicRange(request.query);
-            ans.url += "&seq=" + encodeURIComponent(genomicRange.seq) +
-                       "&start=" + genomicRange.lo + "&end=" + genomicRange.hi;
+            ans.urls[0] += "&seq=" + encodeURIComponent(genomicRange.seq) +
+                           "&start=" + genomicRange.lo + "&end=" + genomicRange.hi;
         }
 
         return ans;
