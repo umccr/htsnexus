@@ -87,7 +87,7 @@ is "$output" "413102" "read entire BAM from Heng Li's bamsvr - record count"
 
 output=$(client/htsnexus.py -s http://localhost:48444 -r 11:10899000-10900000 lh3bamsvr EXA00001 | $samtools view -c -)
 is "$?" "0" "read BAM slice from Heng Li's bamsvr"
-is "$output" "502" "read BAM slice from Heng Li's bamsvr - record count"
+is "$output" "7820" "read BAM slice from Heng Li's bamsvr - record count"
 
 ########
 # CRAM #

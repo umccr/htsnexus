@@ -6,18 +6,17 @@ const Errors = protocol.Errors;
 let MAX_SAFE_INTEGER = 9007199254740991;
 // genomic range parsing
 let re_genomicRange = /^([A-Za-z0-9._*-]+)(:([0-9]+)-([0-9]+))?$/;
-function parseGenomicRange(str) {
-    let m = str.match(re_genomicRange);
-    if (!m) {
-        throw new Errors.InvalidInput("invalid genomic range: " + str);
-    }
+function resolveGenomicRange(query) {
     let ans = {
-        seq: m[1],
-        lo: (m[2] === undefined ? 0 : parseInt(m[3])),
-        hi: (m[2] === undefined ? MAX_SAFE_INTEGER : parseInt(m[4]))
+        seq: query.referenceName,
+        lo: (query.start === undefined ? 0 : parseInt(query.start)),
+        hi: (query.end === undefined ? MAX_SAFE_INTEGER : parseInt(query.end))
+    }
+    if (isNaN(ans.lo) || isNaN(ans.hi)) {
+        throw new Errors.InvalidInput("invalid positions in genomic range");
     }
     if (ans.lo < 0 || ans.hi < ans.lo) {
-        throw new Errors.InvalidInput("invalid genomic range; hi<lo: " + str);
+        throw new Errors.InvalidInput("invalid genomic range; end<start");
     }
     return ans;
 }
@@ -41,20 +40,21 @@ class HTSRoutes {
         let ans = {
             namespace: request.params.namespace,
             accession: request.params.accession,
-            format: format,
-            url: info.url,
+            // format was given to us in lowercase for legacy reasons (reuse v0 database for v1 server)
+            format: format.toUpperCase(),
+            urls: [info.url],
             httpRequestHeaders: {
                 "referer": request.connection.info.protocol + '://' + request.info.host + request.url.path
             }
         };
 
         if (typeof info.file_size === 'number') {
-            ans.size = info.file_size;
+            ans.byteRanges = [{ start : 0, end : info.file_size }];
         }
 
         // genomic range slicing
-        if (request.query.range) {
-            let genomicRange = parseGenomicRange(request.query.range);
+        if (request.query.referenceName) {
+            let genomicRange = resolveGenomicRange(request.query);
 
             // query for index metadata (will fail if we don't have the file indexed)
             let meta = this.db.get("select htsfiles._dbid, reference, slice_prefix, slice_suffix from htsfiles, htsfiles_blocks_meta where htsfiles._dbid = htsfiles_blocks_meta._dbid and format = ? and namespace = ? and accession = ?",
@@ -86,14 +86,16 @@ class HTSRoutes {
                 ans.prefix = meta.slice_prefix.toString('base64');
             }
 
-            ans.byteRange = null;
             if (rslt['count(*)']>0) {
                 let lo = rslt['min(byteLo)'];
                 let hi = rslt['max(byteHi)'];
                 // reporting byteRange as zero-based, half-open
-                ans.byteRange = { start : lo, end : hi };
+                ans.byteRanges = [{ start : lo, end : hi }];
+            } else {
+                // empty result set
+                ans.urls = [];
+                delete ans.byteRanges;
             }
-            // else: empty result set; ans.byteRange remains null
 
             // TODO: handle block_suffix as well.
             if (meta.slice_suffix !== null) {
@@ -104,35 +106,35 @@ class HTSRoutes {
         return ans;
     }
 
-    bam(request, _) {
-        if (request.params.namespace == "lh3bamsvr") {
-            return this.bam_lh3bamsvr(request, _);
+    getReads(request, _) {
+        if (request.query.format === undefined || request.query.format === "BAM") {
+            if (request.params.namespace == "lh3bamsvr") {
+                return this.lh3bamsvr(request, _);
+            }
+            return this.htsfiles_common(request, 'bam', _);
+        } else if (request.query.format === "CRAM") {
+            return this.htsfiles_common(request, 'cram', _);
         }
-
-        return this.htsfiles_common(request, 'bam', _);
+        throw new Errors.UnsupportedFormat("Unrecognized/unsupported format: " + request.query.format);
     }
 
     // special handling for the "lh3bamsvr" namespace, which we redirect to
     // Heng Li's bamsvr
-    bam_lh3bamsvr(request, _) {
+    lh3bamsvr(request, _) {
         let ans = {
             namespace: request.params.namespace,
             accession: request.params.accession,
-            url: "http://bamsvr.herokuapp.com/get?ac=" + encodeURIComponent(request.params.accession),
-            format: "bam"
+            urls: ["http://bamsvr.herokuapp.com/get?ac=" + encodeURIComponent(request.params.accession)],
+            format: "BAM"
         }
 
-        if (request.query.range) {
-            let genomicRange = parseGenomicRange(request.query.range);
-            ans.url += "&chr=" + encodeURIComponent(genomicRange.seq) +
-                       "&start=" + genomicRange.lo + "&end=" + genomicRange.hi;
+       if (request.query.referenceName) {
+            let genomicRange = resolveGenomicRange(request.query);
+            ans.urls[0] += "&seq=" + encodeURIComponent(genomicRange.seq) +
+                           "&start=" + genomicRange.lo + "&end=" + genomicRange.hi;
         }
 
         return ans;
-    }
-
-    cram(request, _) {
-        return this.htsfiles_common(request, 'cram', _);
     }
 }
 
@@ -140,14 +142,8 @@ module.exports.register = (server, config, next) => {
     let impl = new HTSRoutes(config.db);
     server.route({
         method: 'GET',
-        path:'/v0/data/{namespace}/{accession}/bam',
-        handler: protocol.handler((request, _) => impl.bam(request, _)),
-        config: {cors: true}
-    });
-    server.route({
-        method: 'GET',
-        path:'/v0/data/{namespace}/{accession}/cram',
-        handler: protocol.handler((request, _) => impl.cram(request, _)),
+        path:'/v1/reads/{namespace}/{accession}',
+        handler: protocol.handler((request, _) => impl.getReads(request, _)),
         config: {cors: true}
     });
     return next();
