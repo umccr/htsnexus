@@ -9,7 +9,7 @@ import base64
 import json
 import re
 
-DEFAULT_SERVER='http://htsnexus.rnd.dnanex.us'
+DEFAULT_SERVER='http://htsnexus.rnd.dnanex.us/v1/reads'
 
 # convert a "22:1000-2000" genomic range string to a formatted query string
 def genomic_range_query_string(genomic_range):
@@ -22,9 +22,9 @@ def genomic_range_query_string(genomic_range):
 # Contact the htsnexus server to request a "ticket" for a file or slice.
 # In particular the ticket will specify a URL at which the desired data can be
 # accessed (possibly with a byte range and auth headers).
-def get_ticket(what, namespace, accession, format, server=DEFAULT_SERVER, genomic_range=None, verbose=False):
+def get_ticket(namespace, accession, format, server=DEFAULT_SERVER, genomic_range=None, verbose=False):
     # construct query URL
-    query_url = '/'.join([server, 'v1', what, urllib.quote(namespace), urllib.quote(accession)])
+    query_url = '/'.join([server, urllib.quote(namespace), urllib.quote(accession)])
     query_url = query_url + "?format=" + urllib.quote(format)
     if genomic_range:
         query_url = query_url + '&' + genomic_range_query_string(genomic_range)
@@ -48,9 +48,9 @@ def get_ticket(what, namespace, accession, format, server=DEFAULT_SERVER, genomi
         print >>sys.stderr, ('Response: ' + json.dumps(response_copy, indent=2, separators=(',', ': ')))
     return ans
 
-def get(what, namespace, accession, format, verbose=False, **kwargs):
+def get(namespace, accession, format, verbose=False, **kwargs):
     # get ticket
-    ticket = get_ticket(what, namespace, accession, format, verbose=verbose, **kwargs)
+    ticket = get_ticket(namespace, accession, format, verbose=verbose, **kwargs)
 
     # emit the prefix blob, if the ticket so instructs us; this typically consists
     # of the file's header when taking a genomic range slice.
@@ -72,7 +72,7 @@ def get(what, namespace, accession, format, verbose=False, **kwargs):
         if 'byteRanges' in ticket:
             curlcmd.append('-H')
             curlcmd.append('range: bytes=' + str(ticket['byteRanges'][i]['start']) + '-' + str(ticket['byteRanges'][i]['end']-1))
-        curlcmd.append(url)
+        curlcmd.append(str(url))
         if verbose:
             print >>sys.stderr, ('Piping: ' + str(curlcmd))
             sys.stderr.flush()
@@ -88,17 +88,17 @@ def get(what, namespace, accession, format, verbose=False, **kwargs):
         print >>sys.stderr, 'Success'
 
 def main():
-    parser = argparse.ArgumentParser(description='htsnexus streaming client')
+    parser = argparse.ArgumentParser(description='htsnexus streaming client', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-s','--server', metavar='URL', type=str, default=DEFAULT_SERVER, help='htsnexus server endpoint')
     parser.add_argument('-r','--range', metavar='RANGE', type=str, help='target genomic range, seq:lo-hi or just seq')
     parser.add_argument('-v', '--verbose', action='store_true', help='verbose log to standard error')
     parser.add_argument('namespace', type=str, help="accession namespace")
     parser.add_argument('accession', type=str, help="accession")
-    parser.add_argument('format', type=str, nargs='?', default='BAM', choices=['BAM','bam','CRAM','cram'], help="format (default: BAM)")
+    parser.add_argument('format', type=str, nargs='?', default='BAM', choices=['BAM','bam','CRAM','cram'], help="format")
     args = parser.parse_args()
     args.format = args.format.upper()
 
-    return get("reads", args.namespace, args.accession, args.format,
+    return get(args.namespace, args.accession, args.format,
                server=args.server, genomic_range=args.range, verbose=args.verbose)
 
 if __name__ == '__main__':
