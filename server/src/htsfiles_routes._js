@@ -114,7 +114,7 @@ class HTSRoutes {
         } else if (request.query.format === "CRAM") {
             return this.htsfiles_common(request, 'cram', _);
         }
-        throw new Errors.Unable("Unrecognized/unsupported format");
+        throw new Errors.UnsupportedFormat("Unrecognized/unsupported format: " + request.query.format);
     }
 
     // special handling for the "lh3bamsvr" namespace, which we redirect to

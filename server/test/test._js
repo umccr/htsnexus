@@ -69,6 +69,12 @@ describe("Server", function() {
             expect(res.body.size).to.be(undefined);
         });
 
+        it("should reject unspported formats", function(_) {
+            let res = req("/reads/ENCODE/ENCFF621SXE?format=BOGUS", _);
+            expect(res.statusCode).to.be(409);
+            expect(res.body.error.type).to.be("UnsupportedFormat");
+        });
+
         it("should serve the URL and byte range for a genomic range slice", function(_) {
             let res = req("/reads/htsnexus_test/NA12878?range=20:6000000-6020000", _);
             expect(res.statusCode).to.be(200);

@@ -22,6 +22,15 @@ class Unable extends ProtocolError {
 }
 module.exports.Errors.Unable = Unable;
 
+class UnsupportedFormat extends ProtocolError {
+    constructor(msg) {
+        super(msg);
+        this.errorType = "UnsupportedFormat";
+        this.statusCode = 409;
+    }
+}
+module.exports.Errors.UnsupportedFormat = UnsupportedFormat;
+
 class InvalidInput extends ProtocolError {
     constructor(msg) {
         super(msg);
