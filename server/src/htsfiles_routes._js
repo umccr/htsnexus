@@ -42,14 +42,14 @@ class HTSRoutes {
             accession: request.params.accession,
             // format was given to us in lowercase for legacy reasons (reuse v0 database for v1 server)
             format: format.toUpperCase(),
-            urls: [info.url],
+            urls: [{url: info.url}],
             httpRequestHeaders: {
                 "referer": request.connection.info.protocol + '://' + request.info.host + request.url.path
             }
         };
 
         if (typeof info.file_size === 'number') {
-            ans.byteRanges = [{ start : 0, end : info.file_size }];
+            ans.urls[0].byteRange = { start : 0, end : info.file_size };
         }
 
         // genomic range slicing
@@ -90,11 +90,10 @@ class HTSRoutes {
                 let lo = rslt['min(byteLo)'];
                 let hi = rslt['max(byteHi)'];
                 // reporting byteRange as zero-based, half-open
-                ans.byteRanges = [{ start : lo, end : hi }];
+                ans.urls[0].byteRange = { start : lo, end : hi };
             } else {
                 // empty result set
                 ans.urls = [];
-                delete ans.byteRanges;
             }
 
             // TODO: handle block_suffix as well.
@@ -124,14 +123,14 @@ class HTSRoutes {
         let ans = {
             namespace: request.params.namespace,
             accession: request.params.accession,
-            urls: ["http://bamsvr.herokuapp.com/get?ac=" + encodeURIComponent(request.params.accession)],
+            urls: [{url: "http://bamsvr.herokuapp.com/get?ac=" + encodeURIComponent(request.params.accession)}],
             format: "BAM"
         }
 
        if (request.query.referenceName) {
             let genomicRange = resolveGenomicRange(request.query);
-            ans.urls[0] += "&seq=" + encodeURIComponent(genomicRange.seq) +
-                           "&start=" + genomicRange.lo + "&end=" + genomicRange.hi;
+            ans.urls[0].url += "&seq=" + encodeURIComponent(genomicRange.seq) +
+                               "&start=" + genomicRange.lo + "&end=" + genomicRange.hi;
         }
 
         return ans;
