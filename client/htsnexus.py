@@ -7,8 +7,17 @@ import sys
 import urllib
 import base64
 import json
+import re
 
 DEFAULT_SERVER='http://htsnexus.rnd.dnanex.us'
+
+# convert a "22:1000-2000" genomic range string to a formatted query string
+def genomic_range_query_string(genomic_range):
+    m = re.match("^([A-Za-z0-9._*-]+)(:([0-9]+)-([0-9]+))?$", genomic_range)
+    ans = "referenceName=" + urllib.quote(m.group(1))
+    if m.group(4):
+        ans = ans + "&start=" + urllib.quote(m.group(3)) + "&end=" + urllib.quote(m.group(4))
+    return ans
 
 # Contact the htsnexus server to request a "ticket" for a file or slice.
 # In particular the ticket will specify a URL at which the desired data can be
@@ -18,7 +27,7 @@ def get_ticket(what, namespace, accession, format, server=DEFAULT_SERVER, genomi
     query_url = '/'.join([server, 'v1', what, urllib.quote(namespace), urllib.quote(accession)])
     query_url = query_url + "?format=" + urllib.quote(format)
     if genomic_range:
-        query_url = query_url + '&range=' + urllib.quote(genomic_range)
+        query_url = query_url + '&' + genomic_range_query_string(genomic_range)
     if verbose:
         print >>sys.stderr, ('Query URL: ' + query_url)
     # issue request

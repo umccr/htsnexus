@@ -6,18 +6,17 @@ const Errors = protocol.Errors;
 let MAX_SAFE_INTEGER = 9007199254740991;
 // genomic range parsing
 let re_genomicRange = /^([A-Za-z0-9._*-]+)(:([0-9]+)-([0-9]+))?$/;
-function parseGenomicRange(str) {
-    let m = str.match(re_genomicRange);
-    if (!m) {
-        throw new Errors.InvalidInput("invalid genomic range: " + str);
-    }
+function resolveGenomicRange(query) {
     let ans = {
-        seq: m[1],
-        lo: (m[2] === undefined ? 0 : parseInt(m[3])),
-        hi: (m[2] === undefined ? MAX_SAFE_INTEGER : parseInt(m[4]))
+        seq: query.referenceName,
+        lo: (query.start === undefined ? 0 : parseInt(query.start)),
+        hi: (query.end === undefined ? MAX_SAFE_INTEGER : parseInt(query.end))
+    }
+    if (isNaN(ans.lo) || isNaN(ans.hi)) {
+        throw new Errors.InvalidInput("invalid positions in genomic range");
     }
     if (ans.lo < 0 || ans.hi < ans.lo) {
-        throw new Errors.InvalidInput("invalid genomic range; hi<lo: " + str);
+        throw new Errors.InvalidInput("invalid genomic range; end<start");
     }
     return ans;
 }
@@ -54,8 +53,8 @@ class HTSRoutes {
         }
 
         // genomic range slicing
-        if (request.query.range) {
-            let genomicRange = parseGenomicRange(request.query.range);
+        if (request.query.referenceName) {
+            let genomicRange = resolveGenomicRange(request.query);
 
             // query for index metadata (will fail if we don't have the file indexed)
             let meta = this.db.get("select htsfiles._dbid, reference, slice_prefix, slice_suffix from htsfiles, htsfiles_blocks_meta where htsfiles._dbid = htsfiles_blocks_meta._dbid and format = ? and namespace = ? and accession = ?",
@@ -127,8 +126,8 @@ class HTSRoutes {
             format: "BAM"
         }
 
-       if (request.query.range) {
-            let genomicRange = parseGenomicRange(request.query.range);
+       if (request.query.referenceName) {
+            let genomicRange = resolveGenomicRange(request.query);
             ans.url += "&seq=" + encodeURIComponent(genomicRange.seq) +
                        "&start=" + genomicRange.lo + "&end=" + genomicRange.hi;
         }
