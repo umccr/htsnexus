@@ -41,7 +41,8 @@ class HTSRoutes {
         let ans = {
             namespace: request.params.namespace,
             accession: request.params.accession,
-            format: format,
+            // format was given to us in lowercase for legacy reasons (reuse v0 database for v1 server)
+            format: format.toUpperCase(),
             url: info.url,
             httpRequestHeaders: {
                 "referer": request.connection.info.protocol + '://' + request.info.host + request.url.path
@@ -104,35 +105,35 @@ class HTSRoutes {
         return ans;
     }
 
-    bam(request, _) {
-        if (request.params.namespace == "lh3bamsvr") {
-            return this.bam_lh3bamsvr(request, _);
+    getReads(request, _) {
+        if (request.query.format === undefined || request.query.format === "BAM") {
+            if (request.params.namespace == "lh3bamsvr") {
+                return this.lh3bamsvr(request, _);
+            }
+            return this.htsfiles_common(request, 'bam', _);
+        } else if (request.query.format === "CRAM") {
+            return this.htsfiles_common(request, 'cram', _);
         }
-
-        return this.htsfiles_common(request, 'bam', _);
+        throw new Errors.Unable("Unrecognized/unsupported format");
     }
 
     // special handling for the "lh3bamsvr" namespace, which we redirect to
     // Heng Li's bamsvr
-    bam_lh3bamsvr(request, _) {
+    lh3bamsvr(request, _) {
         let ans = {
             namespace: request.params.namespace,
             accession: request.params.accession,
             url: "http://bamsvr.herokuapp.com/get?ac=" + encodeURIComponent(request.params.accession),
-            format: "bam"
+            format: "BAM"
         }
 
-        if (request.query.range) {
+       if (request.query.range) {
             let genomicRange = parseGenomicRange(request.query.range);
-            ans.url += "&chr=" + encodeURIComponent(genomicRange.seq) +
+            ans.url += "&seq=" + encodeURIComponent(genomicRange.seq) +
                        "&start=" + genomicRange.lo + "&end=" + genomicRange.hi;
         }
 
         return ans;
-    }
-
-    cram(request, _) {
-        return this.htsfiles_common(request, 'cram', _);
     }
 }
 
@@ -140,14 +141,8 @@ module.exports.register = (server, config, next) => {
     let impl = new HTSRoutes(config.db);
     server.route({
         method: 'GET',
-        path:'/v0/data/{namespace}/{accession}/bam',
-        handler: protocol.handler((request, _) => impl.bam(request, _)),
-        config: {cors: true}
-    });
-    server.route({
-        method: 'GET',
-        path:'/v0/data/{namespace}/{accession}/cram',
-        handler: protocol.handler((request, _) => impl.cram(request, _)),
+        path:'/v1/reads/{namespace}/{accession}',
+        handler: protocol.handler((request, _) => impl.getReads(request, _)),
         config: {cors: true}
     });
     return next();

@@ -13,11 +13,12 @@ DEFAULT_SERVER='http://htsnexus.rnd.dnanex.us'
 # Contact the htsnexus server to request a "ticket" for a file or slice.
 # In particular the ticket will specify a URL at which the desired data can be
 # accessed (possibly with a byte range and auth headers).
-def get_ticket(namespace, accession, format, server=DEFAULT_SERVER, genomic_range=None, verbose=False):
+def get_ticket(what, namespace, accession, format, server=DEFAULT_SERVER, genomic_range=None, verbose=False):
     # construct query URL
-    query_url = '/'.join([server, 'v0', 'data', urllib.quote(namespace), urllib.quote(accession), format])
+    query_url = '/'.join([server, 'v1', what, urllib.quote(namespace), urllib.quote(accession)])
+    query_url = query_url + "?format=" + urllib.quote(format)
     if genomic_range:
-        query_url = query_url + '?range=' + urllib.quote(genomic_range)
+        query_url = query_url + '&range=' + urllib.quote(genomic_range)
     if verbose:
         print >>sys.stderr, ('Query URL: ' + query_url)
     # issue request
@@ -38,9 +39,9 @@ def get_ticket(namespace, accession, format, server=DEFAULT_SERVER, genomic_rang
         print >>sys.stderr, ('Response: ' + json.dumps(response_copy, indent=2, separators=(',', ': ')))
     return ans
 
-def get(namespace, accession, format, verbose=False, **kwargs):
+def get(what, namespace, accession, format, verbose=False, **kwargs):
     # get ticket
-    ticket = get_ticket(namespace, accession, format, verbose=verbose, **kwargs)
+    ticket = get_ticket(what, namespace, accession, format, verbose=verbose, **kwargs)
 
     # emit the prefix blob, if the ticket so instructs us; this typically consists
     # of the file's header when taking a genomic range slice.
@@ -82,10 +83,11 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true', help='verbose log to standard error')
     parser.add_argument('namespace', type=str, help="accession namespace")
     parser.add_argument('accession', type=str, help="accession")
-    parser.add_argument('format', type=str, nargs='?', default='bam', choices=['bam','cram'], help="format (default: bam)")
+    parser.add_argument('format', type=str, nargs='?', default='BAM', choices=['BAM','bam','CRAM','cram'], help="format (default: BAM)")
     args = parser.parse_args()
+    args.format = args.format.upper()
 
-    return get(args.namespace, args.accession, args.format,
+    return get("reads", args.namespace, args.accession, args.format,
                server=args.server, genomic_range=args.range, verbose=args.verbose)
 
 if __name__ == '__main__':
