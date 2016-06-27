@@ -35,7 +35,7 @@ Here are a few things you can do with htsnexus and samtools:
 *id. with CRAM (samtools 1.2+ needed)*
 
 ```bash
-./htsnexus -r 21 1000genomes_low_coverage HG01102 cram | samtools view -c -
+./htsnexus -r 21 1000genomes_low_coverage HG01102 CRAM | samtools view -c -
 ```
 
 *Stream reads from Heng Li's bamsvr and display as headered SAM*
@@ -48,10 +48,10 @@ At the moment only BAM and CRAM are supported as proof-of-concept; VCF/BCF are c
 
 | namespace | accession | format |
 | --- | --- | --- |
-| **platinum** <br/> Illumina Platinum Genomes stored at EBI | NA12877 NA12878 NA12879 NA12881 NA12882 NA12883 NA12884 NA12885 NA12886 NA12887 NA12888 NA12889 NA12890 NA12891 NA12892 NA12893 | bam |
-| **ENCODE** <br/> ChIP-seq data released by the ENCODE DCC in Jan 2016 | ENCFF014ABI ENCFF024MPE ENCFF070QUN ENCFF090MZL ENCFF124VCI ENCFF137WND ENCFF180VYU ENCFF308BKD ENCFF373VCV ENCFF465GPJ ENCFF572JRO ENCFF630NYB ENCFF743FRI ENCFF800DAY ENCFF862PIC ENCFF866OLR ENCFF904PIO ENCFF929AIJ ENCFF946BKE ENCFF951SEJ | bam |
-| **lh3bamsvr** <br/> Heng's examples | EXA00001 EXA00002 | bam |
-| **1000genomes_low_coverage** <br/> Low-coverage whole-genome sequencing from the 1000 Genomes Project | <a href="http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/">2,535 individual accessions</a> (example usage above) | bam, cram |
+| **platinum** <br/> Illumina Platinum Genomes stored at EBI | NA12877 NA12878 NA12879 NA12881 NA12882 NA12883 NA12884 NA12885 NA12886 NA12887 NA12888 NA12889 NA12890 NA12891 NA12892 NA12893 | BAM |
+| **ENCODE** <br/> ChIP-seq data released by the ENCODE DCC in Jan 2016 | ENCFF014ABI ENCFF024MPE ENCFF070QUN ENCFF090MZL ENCFF124VCI ENCFF137WND ENCFF180VYU ENCFF308BKD ENCFF373VCV ENCFF465GPJ ENCFF572JRO ENCFF630NYB ENCFF743FRI ENCFF800DAY ENCFF862PIC ENCFF866OLR ENCFF904PIO ENCFF929AIJ ENCFF946BKE ENCFF951SEJ | BAM |
+| **lh3bamsvr** <br/> Heng's examples | EXA00001 EXA00002 | BAM |
+| **1000genomes_low_coverage** <br/> Low-coverage whole-genome sequencing from the 1000 Genomes Project | <a href="http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/">2,535 individual accessions</a> (example usage above) | BAM, CRAM |
 
 (We recognize that a directory API method is needed instead of this Markdown table...)
 
@@ -61,14 +61,25 @@ You can get a feel for how htsnexus works by running it in verbose mode:
 
 ```
 $ ./htsnexus -v 1000genomes_low_coverage NA20276 > /dev/null
-Query URL: http://htsnexus.rnd.dnanex.us/1000genomes_low_coverage/NA20276/bam
+Query URL: http://htsnexus.rnd.dnanex.us/v1/reads/1000genomes_low_coverage/NA20276?format=BAM
 Response: {
-  "url": "https://s3.amazonaws.com/1000genomes/phase3/data/NA20276/alignment/NA20276.mapped.ILLUMINA.bwa.ASW.low_coverage.20120522.bam",
   "httpRequestHeaders": {
-    "referer": "http://htsnexus.rnd.dnanex.us/1000genomes_low_coverage/NA20276/bam"
-  }
+    "referer": "http://htsnexus.rnd.dnanex.us/v1/reads/1000genomes_low_coverage/NA20276?format=BAM"
+  },
+  "urls": [
+    "https://s3.amazonaws.com/1000genomes/phase3/data/NA20276/alignment/NA20276.mapped.ILLUMINA.bwa.ASW.low_coverage.20120522.bam"
+  ],
+  "format": "BAM",
+  "namespace": "1000genomes_low_coverage",
+  "accession": "NA20276",
+  "byteRanges": [
+    {
+      "start": 0,
+      "end": 836074733
+    }
+  ]
 }
-Piping: ['curl', '-LSs', '-H', 'referer: http://htsnexus.rnd.dnanex.us/1000genomes_low_coverage/NA20276/bam', 'https://s3.amazonaws.com/1000genomes/phase3/data/NA20276/alignment/NA20276.mapped.ILLUMINA.bwa.ASW.low_coverage.20120522.bam']
+Piping: ['curl', '-LSs', '-H', 'referer: http://htsnexus.rnd.dnanex.us/v1/reads/1000genomes_low_coverage/NA20276?format=BAM', '-H', 'range: bytes=0-836074732', u'https://s3.amazonaws.com/1000genomes/phase3/data/NA20276/alignment/NA20276.mapped.ILLUMINA.bwa.ASW.low_coverage.20120522.bam']
 Success
 ```
 
@@ -78,21 +89,28 @@ How about when we slice a genomic range? This is slightly more complicated.
 
 ```
 $ ./htsnexus -v -r chr12:111766922-111817529 platinum NA12878 | wc -c
-Query URL: http://htsnexus.rnd.dnanex.us/platinum/NA12878/bam?range=chr12%3A111766922-111817529
+Query URL: http://htsnexus.rnd.dnanex.us/v1/reads/platinum/NA12878?format=BAM&referenceName=chr12&start=111766922&end=111817529
 Response: {
-  "url": "http://ftp.era.ebi.ac.uk/vol1/ERA172/ERA172924/bam/NA12878_S1.bam",
-  "httpRequestHeaders": {
-    "referer": "http://htsnexus.rnd.dnanex.us/platinum/NA12878/bam?range=chr12%3A111766922-111817529"
-  },
+  "suffix": "[40 base64 characters]",
   "reference": "hg19",
+  "format": "BAM",
+  "namespace": "platinum",
+  "accession": "NA12878",
+  "byteRanges": [
+    {
+      "start": 81272945657,
+      "end": 81275405961
+    }
+  ],
   "prefix": "[704 base64 characters]",
-  "byteRange": {
-    "start": 81272945657,
-    "end": 81275405961
+  "httpRequestHeaders": {
+    "referer": "http://htsnexus.rnd.dnanex.us/v1/reads/platinum/NA12878?format=BAM&referenceName=chr12&start=111766922&end=111817529"
   },
-  "suffix": "[40 base64 characters]"
+  "urls": [
+    "https://dl.dnanex.us/F/D/8P6zFPZ0fy5z20bJzy32jbG4165F54Fv5fZFbzpK/NA12878_S1.bam"
+  ]
 }
-Piping: ['curl', '-LSs', '-H', 'referer: http://htsnexus.rnd.dnanex.us/platinum/NA12878/bam?range=chr12%3A111766922-111817529', '-H', 'range: bytes=81272945657-81275405960', 'http://ftp.era.ebi.ac.uk/vol1/ERA172/ERA172924/bam/NA12878_S1.bam']
+Piping: ['curl', '-LSs', '-H', 'referer: http://htsnexus.rnd.dnanex.us/v1/reads/platinum/NA12878?format=BAM&referenceName=chr12&start=111766922&end=111817529', '-H', 'range: bytes=81272945657-81275405960', u'https://dl.dnanex.us/F/D/8P6zFPZ0fy5z20bJzy32jbG4165F54Fv5fZFbzpK/NA12878_S1.bam']
 Success
 2460858
 ```
