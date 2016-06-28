@@ -42,14 +42,16 @@ class HTSRoutes {
             accession: request.params.accession,
             // format was given to us in lowercase for legacy reasons (reuse v0 database for v1 server)
             format: format.toUpperCase(),
-            urls: [{url: info.url}],
-            httpRequestHeaders: {
-                "referer": request.connection.info.protocol + '://' + request.info.host + request.url.path
-            }
+            urls: [{
+                url: info.url,
+                headers: {
+                  "referer": request.connection.info.protocol + '://' + request.info.host + request.url.path
+                }
+            }]
         };
 
         if (typeof info.file_size === 'number') {
-            ans.urls[0].byteRange = { start : 0, end : info.file_size };
+            ans.urls[0].headers.range = "bytes=" + 0 + "-" + (info.file_size-1);
         }
 
         // genomic range slicing
@@ -89,8 +91,8 @@ class HTSRoutes {
             if (rslt['count(*)']>0) {
                 let lo = rslt['min(byteLo)'];
                 let hi = rslt['max(byteHi)'];
-                // reporting byteRange as zero-based, half-open
-                ans.urls[0].byteRange = { start : lo, end : hi };
+                // formulate HTTP byte range header (fully closed)
+                ans.urls[0].headers.range = "bytes=" + lo + "-" + (hi-1);
             } else {
                 // empty result set
                 ans.urls = [];
@@ -101,6 +103,9 @@ class HTSRoutes {
                 ans.suffix = meta.slice_suffix.toString('base64');
             }
         }
+
+        // TODO: decompose the byte range into 1GB (or whatever) chunks, to help
+        // clients retry & resume
 
         return ans;
     }

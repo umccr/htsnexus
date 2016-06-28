@@ -63,14 +63,10 @@ def get(namespace, accession, format, verbose=False, **kwargs):
         # delegate to curl to access the URL given in the ticket, including any
         # HTTP request headers htsnexus instructed us to supply.
         curlcmd = ['curl','-LSs']
-        if 'httpRequestHeaders' in ticket:
-            for k, v in ticket['httpRequestHeaders'].items():
+        if 'headers' in item:
+            for k, v in item['headers'].items():
                 curlcmd.append('-H')
                 curlcmd.append(str(k + ': ' + v))
-        # add the byte range header if we're slicing
-        if 'byteRange' in item:
-            curlcmd.append('-H')
-            curlcmd.append('range: bytes=' + str(item['byteRange']['start']) + '-' + str(item['byteRange']['end']-1))
         curlcmd.append(str(item['url']))
         if verbose:
             print >>sys.stderr, ('Piping: ' + str(curlcmd))
