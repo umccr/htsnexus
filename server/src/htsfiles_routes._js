@@ -4,8 +4,6 @@ const protocol = require('./protocol');
 const Errors = protocol.Errors;
 
 let MAX_SAFE_INTEGER = 9007199254740991;
-// genomic range parsing
-let re_genomicRange = /^([A-Za-z0-9._*-]+)(:([0-9]+)-([0-9]+))?$/;
 function resolveGenomicRange(query) {
     let ans = {
         seq: query.referenceName,
