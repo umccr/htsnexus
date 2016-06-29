@@ -56,17 +56,15 @@ describe("Server", function() {
             let res = req("/reads/ENCODE/ENCFF621SXE", _);
             expect(res.statusCode).to.be(200);
             expect(res.headers['access-control-allow-origin']).to.be('https://www.dnanexus.com');
-            expect(res.body.urls[0]).to.be.a('string');
+            expect(res.body.urls[0].url).to.be.a('string');
             expect(res.body.format).to.be('BAM');
-            expect(res.body.byteRanges).to.be(undefined);
 
             // explicit format
             res = req("/reads/ENCODE/ENCFF621SXE?format=BAM", _);
             expect(res.statusCode).to.be(200);
             expect(res.headers['access-control-allow-origin']).to.be('https://www.dnanexus.com');
-            expect(res.body.urls[0]).to.be.a('string');
+            expect(res.body.urls[0].url).to.be.a('string');
             expect(res.body.format).to.be('BAM');
-            expect(res.body.byteRanges).to.be(undefined);
         });
 
         it("should reject unspported formats", function(_) {
@@ -78,7 +76,8 @@ describe("Server", function() {
         it("should serve the URL and byte range for a genomic range slice", function(_) {
             let res = req("/reads/htsnexus_test/NA12878?referenceName=20&start=6000000&end=6020000", _);
             expect(res.statusCode).to.be(200);
-            expect(res.body.urls[0]).to.be.a('string');
+            expect(res.body.urls[0].url).to.be.a('string');
+            expect(res.body.urls[0].headers.range).to.be("bytes=977196-1165272");
             expect(res.body.reference).to.be('GRCh37');
             expect(res.body.format).to.be('BAM');
 
@@ -87,9 +86,6 @@ describe("Server", function() {
             expect(buf[0]).to.be(0x1f);
             expect(buf[1]).to.be(0x8b);
 
-            expect(res.body.byteRanges[0].start).to.be(977196);
-            expect(res.body.byteRanges[0].end).to.be(1165273);
-
             expect(res.body.suffix).to.be.a('string');
             buf = new Buffer(res.body.suffix, 'base64');
             expect(buf[0]).to.be(0x1f);
@@ -97,25 +93,24 @@ describe("Server", function() {
             expect(buf.length).to.be(28);
 
             res = req("/reads/htsnexus_test/NA12878?format=BAM&referenceName=20&start=5000000&end=6020000", _);
-            expect(res.body.byteRanges[0].start).to.be(977196);
-            expect(res.body.byteRanges[0].end).to.be(1165273);
+            expect(res.body.urls[0].headers.range).to.be("bytes=977196-1165272");
         });
 
         it("should suppress BAM header slice prefix on request", function(_) {
             let res = req("/reads/htsnexus_test/NA12878?referenceName=20&start=6000000&end=6020000&noHeaderPrefix", _);
             expect(res.statusCode).to.be(200);
-            expect(res.body.urls[0]).to.be.a('string');
+            expect(res.body.urls[0].url).to.be.a('string');
+            expect(res.body.urls[0].headers.range).to.be("bytes=977196-1165272");
             expect(res.body.format).to.be('BAM');
             expect(res.body.reference).to.be('GRCh37');
-            expect(res.body.byteRanges[0].start).to.be(977196);
-            expect(res.body.byteRanges[0].end).to.be(1165273);
             expect(res.body.prefix).to.be(undefined);
         });
 
         it("should serve the byte range for a whole reference sequence", function(_) {
             let res = req("/reads/htsnexus_test/NA12878?referenceName=20", _);
             expect(res.statusCode).to.be(200);
-            expect(res.body.urls[0]).to.be.a('string');
+            expect(res.body.urls[0].url).to.be.a('string');
+            expect(res.body.urls[0].headers.range).to.be("bytes=977196-2128165");
             expect(res.body.format).to.be('BAM');
             expect(res.body.reference).to.be('GRCh37');
 
@@ -134,7 +129,8 @@ describe("Server", function() {
         it("should serve the byte range for unmapped reads", function(_) {
             let res = req("/reads/htsnexus_test/NA12878?referenceName=*", _);
             expect(res.statusCode).to.be(200);
-            expect(res.body.urls[0]).to.be.a('string');
+            expect(res.body.urls[0].url).to.be.a('string');
+            expect(res.body.urls[0].headers.range).to.be("bytes=2112141-2596770");
             expect(res.body.format).to.be('BAM');
             expect(res.body.reference).to.be('GRCh37');
 
@@ -155,7 +151,6 @@ describe("Server", function() {
             expect(res.statusCode).to.be(200);
             expect(res.body.format).to.be('BAM');
             expect(res.body.urls.length).to.be(0);
-            expect(res.body.byteRanges).to.be(undefined);
 
             expect(res.body.prefix).to.be.a('string');
             let buf = new Buffer(res.body.prefix, 'base64');
@@ -171,7 +166,6 @@ describe("Server", function() {
             res = req("/reads/htsnexus_test/NA12878?referenceName=XXX", _);
             expect(res.statusCode).to.be(200);
             expect(res.body.urls.length).to.be(0);
-            expect(res.body.byteRanges).to.be(undefined);
         });
 
         it("should reject invalid ranges", function(_) {
@@ -188,14 +182,15 @@ describe("Server", function() {
             let res = req("/reads/lh3bamsvr/EXA00001?format=BAM", _);
             expect(res.statusCode).to.be(200);
             expect(res.body.format).to.be('BAM');
-            expect(res.body.urls[0]).to.be.a('string');
+            expect(res.body.urls[0].url).to.be.a('string');
+            expect(res.body.urls[0].headers).to.be(undefined);
 
             res = req("/reads/lh3bamsvr/EXA00001?referenceName=11:10899000&end=10900000", _);
             expect(res.statusCode).to.be(200);
             expect(res.body.format).to.be('BAM');
             expect(res.body.prefix).to.be(undefined);
-            expect(res.body.urls[0]).to.be.a('string');
-            expect(res.body.byteRanges).to.be(undefined);
+            expect(res.body.urls[0].url).to.be.a('string');
+            expect(res.body.urls[0].headers).to.be(undefined);
             expect(res.body.suffix).to.be(undefined);
         });
     });
@@ -205,25 +200,22 @@ describe("Server", function() {
             let res = req("/reads/htsnexus_test/NA12878?format=CRAM", _);
             expect(res.statusCode).to.be(200);
             expect(res.headers['access-control-allow-origin']).to.be('https://www.dnanexus.com');
-            expect(res.body.urls[0]).to.be.a('string');
+            expect(res.body.urls[0].url).to.be.a('string');
+            expect(res.body.urls[0].headers.range).to.be("bytes=0-1661525");
             expect(res.body.format).to.be('CRAM');
-            expect(res.body.byteRanges[0].start).to.be(0);
-            expect(res.body.byteRanges[0].end).to.be(1661526);
         });
 
         it("should serve the URL and byte range for a genomic range slice", function(_) {
             let res = req("/reads/htsnexus_test/NA12878?format=CRAM&referenceName=20&start=6000000&end=6020000", _);
             expect(res.statusCode).to.be(200);
-            expect(res.body.urls[0]).to.be.a('string');
+            expect(res.body.urls[0].url).to.be.a('string');
+            expect(res.body.urls[0].headers.range).to.be("bytes=617115-1094992");
             expect(res.body.format).to.be('CRAM');
             expect(res.body.reference).to.be('GRCh37');
 
             expect(res.body.prefix).to.be.a('string');
             let buf = new Buffer(res.body.prefix, 'base64');
             expect(buf.slice(0,4).toString()).to.be('CRAM');
-
-            expect(res.body.byteRanges[0].start).to.be(617115);
-            expect(res.body.byteRanges[0].end).to.be(1094993);
 
             expect(res.body.suffix).to.be.a('string');
             buf = new Buffer(res.body.suffix, 'base64');
@@ -232,29 +224,26 @@ describe("Server", function() {
             expect(buf.length).to.be(38);
 
             res = req("/reads/htsnexus_test/NA12878?format=CRAM&referenceName=20&start=5000000&end=6020000", _);
-            expect(res.body.byteRanges[0].start).to.be(617115);
-            expect(res.body.byteRanges[0].end).to.be(1094993);
+            expect(res.body.urls[0].headers.range).to.be("bytes=617115-1094992");
         });
 
         it("should suppress CRAM header slice prefix on request", function(_) {
             let res = req("/reads/htsnexus_test/NA12878?format=CRAM&referenceName=20&start=6000000&end=6020000&noHeaderPrefix", _);
             expect(res.statusCode).to.be(200);
-            expect(res.body.urls[0]).to.be.a('string');
+            expect(res.body.urls[0].url).to.be.a('string');
+            expect(res.body.urls[0].headers.range).to.be("bytes=617115-1094992");
             expect(res.body.format).to.be('CRAM');
             expect(res.body.reference).to.be('GRCh37');
-            expect(res.body.byteRanges[0].start).to.be(617115);
-            expect(res.body.byteRanges[0].end).to.be(1094993);
             expect(res.body.prefix).to.be(undefined);
         });
 
         it("should serve the byte range for a whole reference sequence", function(_) {
             let res = req("/reads/htsnexus_test/NA12878?format=CRAM&referenceName=20", _);
             expect(res.statusCode).to.be(200);
-            expect(res.body.urls[0]).to.be.a('string');
+            expect(res.body.urls[0].url).to.be.a('string');
+            expect(res.body.urls[0].headers.range).to.be("bytes=617115-1310236");
             expect(res.body.format).to.be('CRAM');
             expect(res.body.reference).to.be('GRCh37');
-            expect(res.body.byteRanges[0].start).to.be(617115);
-            expect(res.body.byteRanges[0].end).to.be(1310237);
 
             expect(res.body.prefix).to.be.a('string');
             let buf = new Buffer(res.body.prefix, 'base64');
@@ -270,11 +259,10 @@ describe("Server", function() {
         it("should serve the byte range for unmapped reads", function(_) {
             let res = req("/reads/htsnexus_test/NA12878?format=CRAM&referenceName=*", _);
             expect(res.statusCode).to.be(200);
-            expect(res.body.urls[0]).to.be.a('string');
+            expect(res.body.urls[0].url).to.be.a('string');
+            expect(res.body.urls[0].headers.range).to.be("bytes=1310237-1661487");
             expect(res.body.format).to.be('CRAM');
             expect(res.body.reference).to.be('GRCh37');
-            expect(res.body.byteRanges[0].start).to.be(1310237);
-            expect(res.body.byteRanges[0].end).to.be(1661488);
 
             expect(res.body.prefix).to.be.a('string');
             let buf = new Buffer(res.body.prefix, 'base64');
@@ -291,7 +279,7 @@ describe("Server", function() {
             let res = req("/reads/htsnexus_test/NA12878?format=CRAM&referenceName=20&start=1&end=10000", _);
             expect(res.statusCode).to.be(200);
             expect(res.body.format).to.be('CRAM');
-            expect(res.body.byteRanges).to.be(undefined);
+            expect(res.body.urls.length).to.be(0);
 
             expect(res.body.prefix).to.be.a('string');
             let buf = new Buffer(res.body.prefix, 'base64');
@@ -305,7 +293,7 @@ describe("Server", function() {
 
             res = req("/reads/htsnexus_test/NA12878?format=CRAM&referenceName=XXX", _);
             expect(res.statusCode).to.be(200);
-            expect(res.body.byteRanges).to.be(undefined);
+            expect(res.body.urls.length).to.be(0);
         });
     });
 

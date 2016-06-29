@@ -59,25 +59,19 @@ def get(namespace, accession, format, verbose=False, **kwargs):
         sys.stdout.flush()
 
     # pipe the raw data
-    i = 0
-    for url in ticket['urls']:
+    for item in ticket['urls']:
         # delegate to curl to access the URL given in the ticket, including any
         # HTTP request headers htsnexus instructed us to supply.
         curlcmd = ['curl','-LSs']
-        if 'httpRequestHeaders' in ticket:
-            for k, v in ticket['httpRequestHeaders'].items():
+        if 'headers' in item:
+            for k, v in item['headers'].items():
                 curlcmd.append('-H')
                 curlcmd.append(str(k + ': ' + v))
-        # add the byte range header if we're slicing
-        if 'byteRanges' in ticket:
-            curlcmd.append('-H')
-            curlcmd.append('range: bytes=' + str(ticket['byteRanges'][i]['start']) + '-' + str(ticket['byteRanges'][i]['end']-1))
-        curlcmd.append(str(url))
+        curlcmd.append(str(item['url']))
         if verbose:
             print >>sys.stderr, ('Piping: ' + str(curlcmd))
             sys.stderr.flush()
         subprocess.check_call(curlcmd)
-        i = i + 1
 
     # emit the suffix blob, if the ticket so instructs us; this typically consists
     # of the format-defined EOF marker when taking a genomic range slice.
