@@ -63,27 +63,20 @@ You can get a feel for how htsnexus works by running it in verbose mode:
 $ ./htsnexus -v 1000genomes_low_coverage NA20276 > /dev/null
 Query URL: http://htsnexus.rnd.dnanex.us/v1/reads/1000genomes_low_coverage/NA20276?format=BAM
 Response: {
-  "httpRequestHeaders": {
-    "referer": "http://htsnexus.rnd.dnanex.us/v1/reads/1000genomes_low_coverage/NA20276?format=BAM"
-  },
-  "urls": [
-    "https://s3.amazonaws.com/1000genomes/phase3/data/NA20276/alignment/NA20276.mapped.ILLUMINA.bwa.ASW.low_coverage.20120522.bam"
-  ],
-  "format": "BAM",
   "namespace": "1000genomes_low_coverage",
   "accession": "NA20276",
-  "byteRanges": [
+  "urls": [
     {
-      "start": 0,
-      "end": 836074733
+      "url": "https://s3.amazonaws.com/1000genomes/phase3/data/NA20276/alignment/NA20276.mapped.ILLUMINA.bwa.ASW.low_coverage.20120522.bam"
     }
-  ]
+  ],
+  "format": "BAM"
 }
-Piping: ['curl', '-LSs', '-H', 'referer: http://htsnexus.rnd.dnanex.us/v1/reads/1000genomes_low_coverage/NA20276?format=BAM', '-H', 'range: bytes=0-836074732', u'https://s3.amazonaws.com/1000genomes/phase3/data/NA20276/alignment/NA20276.mapped.ILLUMINA.bwa.ASW.low_coverage.20120522.bam']
+Piping: ['curl', '-LSs', '-H', 'range: bytes=0-836074732', '-H', 'referer: http://htsnexus.rnd.dnanex.us/v1/reads/1000genomes_low_coverage/NA20276?format=BAM', 'https://s3.amazonaws.com/1000genomes/phase3/data/NA20276/alignment/NA20276.mapped.ILLUMINA.bwa.ASW.low_coverage.20120522.bam']
 Success
 ```
 
-The htsnexus client makes the request to an API server. The server's JSON response gives the client another URL at which it can access the desired data, in this case a BAM file within the AWS mirror of 1000 Genomes. Then, the client delegates to curl to download that file.
+The htsnexus client makes the request to an API server. The server's JSON response gives the client another URL at which it can access the desired data, in this case a BAM file within the AWS mirror of 1000 Genomes. Then, the client delegates to curl to download that file. (Shelling out to curl is just a quick-and-dirty demo implementation strategy, of course.)
 
 How about when we slice a genomic range? This is slightly more complicated.
 
@@ -91,26 +84,22 @@ How about when we slice a genomic range? This is slightly more complicated.
 $ ./htsnexus -v -r chr12:111766922-111817529 platinum NA12878 | wc -c
 Query URL: http://htsnexus.rnd.dnanex.us/v1/reads/platinum/NA12878?format=BAM&referenceName=chr12&start=111766922&end=111817529
 Response: {
+  "urls": [
+    {
+      "url": "https://dl.dnanex.us/F/D/8P6zFPZ0fy5z20bJzy32jbG4165F54Fv5fZFbzpK/NA12878_S1.bam",
+      "headers": {
+        "range": "bytes=81272945657-81275405960"
+      }
+    }
+  ],
+  "prefix": "[704 base64 characters]",
   "suffix": "[40 base64 characters]",
   "reference": "hg19",
   "format": "BAM",
   "namespace": "platinum",
-  "accession": "NA12878",
-  "byteRanges": [
-    {
-      "start": 81272945657,
-      "end": 81275405961
-    }
-  ],
-  "prefix": "[704 base64 characters]",
-  "httpRequestHeaders": {
-    "referer": "http://htsnexus.rnd.dnanex.us/v1/reads/platinum/NA12878?format=BAM&referenceName=chr12&start=111766922&end=111817529"
-  },
-  "urls": [
-    "https://dl.dnanex.us/F/D/8P6zFPZ0fy5z20bJzy32jbG4165F54Fv5fZFbzpK/NA12878_S1.bam"
-  ]
+  "accession": "NA12878"
 }
-Piping: ['curl', '-LSs', '-H', 'referer: http://htsnexus.rnd.dnanex.us/v1/reads/platinum/NA12878?format=BAM&referenceName=chr12&start=111766922&end=111817529', '-H', 'range: bytes=81272945657-81275405960', u'https://dl.dnanex.us/F/D/8P6zFPZ0fy5z20bJzy32jbG4165F54Fv5fZFbzpK/NA12878_S1.bam']
+Piping: ['curl', '-LSs', '-H', 'range: bytes=81272945657-81275405960', '-H', 'referer: http://htsnexus.rnd.dnanex.us/v1/reads/platinum/NA12878?format=BAM&referenceName=chr12&start=111766922&end=111817529', 'https://dl.dnanex.us/F/D/8P6zFPZ0fy5z20bJzy32jbG4165F54Fv5fZFbzpK/NA12878_S1.bam']
 Success
 2460858
 ```
