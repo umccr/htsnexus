@@ -8,6 +8,7 @@ import urllib
 import base64
 import json
 import re
+from copy import deepcopy
 
 DEFAULT_SERVER='http://htsnexus.rnd.dnanex.us/v1/reads'
 
@@ -39,12 +40,12 @@ def get_ticket(namespace, accession, format, server=DEFAULT_SERVER, genomic_rang
     # parse response JSON
     ans = response.json()
     if verbose:
-        response_copy = dict(ans)
+        response_copy = deepcopy(ans)
         # don't print big base64 buffers to console...
-        if 'prefix' in response_copy:
-            response_copy['prefix'] = '[' + str(len(response_copy['prefix'])) + ' base64 characters]'
-        if 'suffix' in response_copy:
-            response_copy['suffix'] = '[' + str(len(response_copy['suffix'])) + ' base64 characters]'
+        for item in response_copy['urls']:
+            if item['url'].startswith('data:'):
+                delim = item['url'].index(',')
+                item['url'] = item['url'][:(delim+1)] + '[' + str(len(item['url'])-delim-1) + ' base64 characters]'
         print >>sys.stderr, ('Response: ' + json.dumps(response_copy, indent=2, separators=(',', ': ')))
     return ans
 
@@ -52,31 +53,26 @@ def get(namespace, accession, format, verbose=False, **kwargs):
     # get ticket
     ticket = get_ticket(namespace, accession, format, verbose=verbose, **kwargs)
 
-    # emit the prefix blob, if the ticket so instructs us; this typically consists
-    # of the file's header when taking a genomic range slice.
-    if 'prefix' in ticket:
-        sys.stdout.write(base64.b64decode(ticket['prefix']))
-        sys.stdout.flush()
-
     # pipe the raw data
     for item in ticket['urls']:
-        # delegate to curl to access the URL given in the ticket, including any
-        # HTTP request headers htsnexus instructed us to supply.
-        curlcmd = ['curl','-LSs']
-        if 'headers' in item:
-            for k, v in item['headers'].items():
-                curlcmd.append('-H')
-                curlcmd.append(str(k + ': ' + v))
-        curlcmd.append(str(item['url']))
-        if verbose:
-            print >>sys.stderr, ('Piping: ' + str(curlcmd))
-            sys.stderr.flush()
-        subprocess.check_call(curlcmd)
-
-    # emit the suffix blob, if the ticket so instructs us; this typically consists
-    # of the format-defined EOF marker when taking a genomic range slice.
-    if 'suffix' in ticket:
-        sys.stdout.write(base64.b64decode(ticket['suffix']))
+        if item['url'].startswith('data:'):
+            # emit a blob given inline as a data URI. typically contains a format-specific
+            # header or footer/EOF when taking a genomic range slice.
+            sys.stdout.write(base64.b64decode(item['url'][(item['url'].index(',')+1):]))
+            sys.stdout.flush()
+        else:
+            # delegate to curl to access the URL given in the ticket, including any
+            # HTTP request headers htsnexus instructed us to supply.
+            curlcmd = ['curl','-LSs']
+            if 'headers' in item:
+                for k, v in item['headers'].items():
+                    curlcmd.append('-H')
+                    curlcmd.append(str(k + ': ' + v))
+            curlcmd.append(str(item['url']))
+            if verbose:
+                print >>sys.stderr, ('Piping: ' + str(curlcmd))
+                sys.stderr.flush()
+            subprocess.check_call(curlcmd)
 
     if verbose:
         print >>sys.stderr, 'Success'

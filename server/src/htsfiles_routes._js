@@ -79,13 +79,6 @@ class HTSRoutes {
                                    meta._dbid, _);
             }
 
-            // TODO: handle block_prefix too. it'll be slightly tricky to get
-            // block_prefix and block_suffix from the above aggregation query.
-            // http://stackoverflow.com/a/17319622
-            if (meta.slice_prefix !== null && request.query['noHeaderPrefix'] === undefined) {
-                ans.prefix = meta.slice_prefix.toString('base64');
-            }
-
             if (rslt['count(*)']>0) {
                 let lo = rslt['min(byteLo)'];
                 let hi = rslt['max(byteHi)'];
@@ -96,9 +89,16 @@ class HTSRoutes {
                 ans.urls = [];
             }
 
+            // TODO: handle block_prefix too. it'll be slightly tricky to get
+            // block_prefix and block_suffix from the above aggregation query.
+            // http://stackoverflow.com/a/17319622
+            if (meta.slice_prefix !== null && request.query['noHeaderPrefix'] === undefined) {
+                ans.urls.unshift({url: "data:application/octet-stream;base64," + meta.slice_prefix.toString('base64')});
+            }
+
             // TODO: handle block_suffix as well.
             if (meta.slice_suffix !== null) {
-                ans.suffix = meta.slice_suffix.toString('base64');
+                ans.urls.push({url: "data:application/octet-stream;base64," + meta.slice_suffix.toString('base64')});
             }
         }
 
