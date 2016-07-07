@@ -19,10 +19,6 @@ function resolveGenomicRange(query) {
     return ans;
 }
 
-function dataURI(buf) {
-    return "data:application/octet-stream;base64," + encodeURIComponent(buf.toString('base64'));
-}
-
 class HTSRoutes {
     constructor(db) {
         if (!db) {
@@ -97,12 +93,12 @@ class HTSRoutes {
             // block_prefix and block_suffix from the above aggregation query.
             // http://stackoverflow.com/a/17319622
             if (meta.slice_prefix !== null && request.query['noHeaderPrefix'] === undefined) {
-                ans.urls.unshift({url: dataURI(meta.slice_prefix)});
+                ans.urls.unshift({url: "data:application/octet-stream;base64," + meta.slice_prefix.toString('base64')});
             }
 
             // TODO: handle block_suffix as well.
             if (meta.slice_suffix !== null) {
-                ans.urls.push({url: dataURI(meta.slice_suffix)});
+                ans.urls.push({url: "data:application/octet-stream;base64," + meta.slice_suffix.toString('base64')});
             }
         }
 

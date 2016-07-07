@@ -87,13 +87,13 @@ describe("Server", function() {
 
             expect(res.body.urls[0].url).to.be.a('string');
             expect(res.body.urls[0].url).to.match(/data:.*/);
-            let buf = new Buffer(decodeURIComponent(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1)), 'base64');
+            let buf = new Buffer(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1), 'base64');
             expect(buf[0]).to.be(0x1f);
             expect(buf[1]).to.be(0x8b);
 
             expect(res.body.urls[2].url).to.be.a('string');
             expect(res.body.urls[2].url).to.match(/data:.*/);
-            buf = new Buffer(decodeURIComponent(res.body.urls[2].url.substring(res.body.urls[2].url.indexOf(',')+1)), 'base64');
+            buf = new Buffer(res.body.urls[2].url.substring(res.body.urls[2].url.indexOf(',')+1), 'base64');
             expect(buf[0]).to.be(0x1f);
             expect(buf[1]).to.be(0x8b);
             expect(buf.length).to.be(28);
@@ -126,13 +126,13 @@ describe("Server", function() {
 
             expect(res.body.urls[0].url).to.be.a('string');
             expect(res.body.urls[0].url).to.match(/data:.*/);
-            let buf = new Buffer(decodeURIComponent(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1)), 'base64');
+            let buf = new Buffer(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1), 'base64');
             expect(buf[0]).to.be(0x1f);
             expect(buf[1]).to.be(0x8b);
 
             expect(res.body.urls[2].url).to.be.a('string');
             expect(res.body.urls[2].url).to.match(/data:.*/);
-            buf = new Buffer(decodeURIComponent(res.body.urls[2].url.substring(res.body.urls[2].url.indexOf(',')+1)), 'base64');
+            buf = new Buffer(res.body.urls[2].url.substring(res.body.urls[2].url.indexOf(',')+1), 'base64');
             expect(buf[0]).to.be(0x1f);
             expect(buf[1]).to.be(0x8b);
             expect(buf.length).to.be(28);
@@ -150,13 +150,13 @@ describe("Server", function() {
 
             expect(res.body.urls[0].url).to.be.a('string');
             expect(res.body.urls[0].url).to.match(/data:.*/);
-            let buf = new Buffer(decodeURIComponent(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1)), 'base64');
+            let buf = new Buffer(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1), 'base64');
             expect(buf[0]).to.be(0x1f);
             expect(buf[1]).to.be(0x8b);
 
             expect(res.body.urls[2].url).to.be.a('string');
             expect(res.body.urls[2].url).to.match(/data:.*/);
-            buf = new Buffer(decodeURIComponent(res.body.urls[2].url.substring(res.body.urls[2].url.indexOf(',')+1)), 'base64');
+            buf = new Buffer(res.body.urls[2].url.substring(res.body.urls[2].url.indexOf(',')+1), 'base64');
             expect(buf[0]).to.be(0x1f);
             expect(buf[1]).to.be(0x8b);
             expect(buf.length).to.be(28);
@@ -173,13 +173,13 @@ describe("Server", function() {
 
             expect(res.body.urls[0].url).to.be.a('string');
             expect(res.body.urls[0].url).to.match(/data:.*/);
-            let buf = new Buffer(decodeURIComponent(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1)), 'base64');
+            let buf = new Buffer(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1), 'base64');
             expect(buf[0]).to.be(0x1f);
             expect(buf[1]).to.be(0x8b);
 
             expect(res.body.urls[1].url).to.be.a('string');
             expect(res.body.urls[1].url).to.match(/data:.*/);
-            buf = new Buffer(decodeURIComponent(res.body.urls[1].url.substring(res.body.urls[1].url.indexOf(',')+1)), 'base64');
+            buf = new Buffer(res.body.urls[1].url.substring(res.body.urls[1].url.indexOf(',')+1), 'base64');
             expect(buf[0]).to.be(0x1f);
             expect(buf[1]).to.be(0x8b);
             expect(buf.length).to.be(28);
@@ -190,13 +190,13 @@ describe("Server", function() {
 
             expect(res.body.urls[0].url).to.be.a('string');
             expect(res.body.urls[0].url).to.match(/data:.*/);
-            buf = new Buffer(decodeURIComponent(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1)), 'base64');
+            buf = new Buffer(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1), 'base64');
             expect(buf[0]).to.be(0x1f);
             expect(buf[1]).to.be(0x8b);
 
             expect(res.body.urls[1].url).to.be.a('string');
             expect(res.body.urls[1].url).to.match(/data:.*/);
-            buf = new Buffer(decodeURIComponent(res.body.urls[1].url.substring(res.body.urls[1].url.indexOf(',')+1)), 'base64');
+            buf = new Buffer(res.body.urls[1].url.substring(res.body.urls[1].url.indexOf(',')+1), 'base64');
             expect(buf[0]).to.be(0x1f);
             expect(buf[1]).to.be(0x8b);
             expect(buf.length).to.be(28);
@@ -253,12 +253,12 @@ describe("Server", function() {
 
             expect(res.body.urls[0].url).to.be.a('string');
             expect(res.body.urls[0].url).to.match(/data:.*/);
-            let buf = new Buffer(decodeURIComponent(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1)), 'base64');
+            let buf = new Buffer(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1), 'base64');
             expect(buf.slice(0,4).toString()).to.be('CRAM');
 
             expect(res.body.urls[2].url).to.be.a('string');
             expect(res.body.urls[2].url).to.match(/data:.*/);
-            buf = new Buffer(decodeURIComponent(res.body.urls[2].url.substring(res.body.urls[2].url.indexOf(',')+1)), 'base64');
+            buf = new Buffer(res.body.urls[2].url.substring(res.body.urls[2].url.indexOf(',')+1), 'base64');
             expect(buf[0]).to.be(0x0f);
             expect(buf[1]).to.be(0x00);
             expect(buf.length).to.be(38);
@@ -291,12 +291,12 @@ describe("Server", function() {
 
             expect(res.body.urls[0].url).to.be.a('string');
             expect(res.body.urls[0].url).to.match(/data:.*/);
-            let buf = new Buffer(decodeURIComponent(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1)), 'base64');
+            let buf = new Buffer(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1), 'base64');
             expect(buf.slice(0,4).toString()).to.be('CRAM');
 
             expect(res.body.urls[2].url).to.be.a('string');
             expect(res.body.urls[2].url).to.match(/data:.*/);
-            buf = new Buffer(decodeURIComponent(res.body.urls[2].url.substring(res.body.urls[2].url.indexOf(',')+1)), 'base64');
+            buf = new Buffer(res.body.urls[2].url.substring(res.body.urls[2].url.indexOf(',')+1), 'base64');
             expect(buf[0]).to.be(0x0f);
             expect(buf[1]).to.be(0x00);
             expect(buf.length).to.be(38);
@@ -314,12 +314,12 @@ describe("Server", function() {
 
             expect(res.body.urls[0].url).to.be.a('string');
             expect(res.body.urls[0].url).to.match(/data:.*/);
-            let buf = new Buffer(decodeURIComponent(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1)), 'base64');
+            let buf = new Buffer(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1), 'base64');
             expect(buf.slice(0,4).toString()).to.be('CRAM');
 
             expect(res.body.urls[2].url).to.be.a('string');
             expect(res.body.urls[2].url).to.match(/data:.*/);
-            buf = new Buffer(decodeURIComponent(res.body.urls[2].url.substring(res.body.urls[2].url.indexOf(',')+1)), 'base64');
+            buf = new Buffer(res.body.urls[2].url.substring(res.body.urls[2].url.indexOf(',')+1), 'base64');
             expect(buf[0]).to.be(0x0f);
             expect(buf[1]).to.be(0x00);
             expect(buf.length).to.be(38);
@@ -333,12 +333,12 @@ describe("Server", function() {
 
             expect(res.body.urls[0].url).to.be.a('string');
             expect(res.body.urls[0].url).to.match(/data:.*/);
-            let buf = new Buffer(decodeURIComponent(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1)), 'base64');
+            let buf = new Buffer(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1), 'base64');
             expect(buf.slice(0,4).toString()).to.be('CRAM');
 
             expect(res.body.urls[1].url).to.be.a('string');
             expect(res.body.urls[1].url).to.match(/data:.*/);
-            buf = new Buffer(decodeURIComponent(res.body.urls[1].url.substring(res.body.urls[1].url.indexOf(',')+1)), 'base64');
+            buf = new Buffer(res.body.urls[1].url.substring(res.body.urls[1].url.indexOf(',')+1), 'base64');
             expect(buf[0]).to.be(0x0f);
             expect(buf[1]).to.be(0x00);
             expect(buf.length).to.be(38);
@@ -349,12 +349,12 @@ describe("Server", function() {
 
             expect(res.body.urls[0].url).to.be.a('string');
             expect(res.body.urls[0].url).to.match(/data:.*/);
-            buf = new Buffer(decodeURIComponent(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1)), 'base64');
+            buf = new Buffer(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1), 'base64');
             expect(buf.slice(0,4).toString()).to.be('CRAM');
 
             expect(res.body.urls[1].url).to.be.a('string');
             expect(res.body.urls[1].url).to.match(/data:.*/);
-            buf = new Buffer(decodeURIComponent(res.body.urls[1].url.substring(res.body.urls[1].url.indexOf(',')+1)), 'base64');
+            buf = new Buffer(res.body.urls[1].url.substring(res.body.urls[1].url.indexOf(',')+1), 'base64');
             expect(buf[0]).to.be(0x0f);
             expect(buf[1]).to.be(0x00);
             expect(buf.length).to.be(38);
