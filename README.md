@@ -86,25 +86,30 @@ Query URL: http://htsnexus.rnd.dnanex.us/v1/reads/platinum/NA12878?format=BAM&re
 Response: {
   "urls": [
     {
+      "url": "data:application/octet-stream;base64,[704 base64 characters]"
+    },
+    {
       "url": "https://dl.dnanex.us/F/D/8P6zFPZ0fy5z20bJzy32jbG4165F54Fv5fZFbzpK/NA12878_S1.bam",
       "headers": {
-        "range": "bytes=81272945657-81275405960"
+        "range": "bytes=81272945657-81275405960",
+        "referer": "http://htsnexus.rnd.dnanex.us/v1/reads/platinum/NA12878?format=BAM&referenceName=chr12&start=111766922&end=111817529"
       }
+    },
+    {
+      "url": "data:application/octet-stream;base64,[40 base64 characters]"
     }
   ],
-  "prefix": "[704 base64 characters]",
-  "suffix": "[40 base64 characters]",
-  "reference": "hg19",
-  "format": "BAM",
   "namespace": "platinum",
-  "accession": "NA12878"
+  "accession": "NA12878",
+  "reference": "hg19",
+  "format": "BAM"
 }
 Piping: ['curl', '-LSs', '-H', 'range: bytes=81272945657-81275405960', '-H', 'referer: http://htsnexus.rnd.dnanex.us/v1/reads/platinum/NA12878?format=BAM&referenceName=chr12&start=111766922&end=111817529', 'https://dl.dnanex.us/F/D/8P6zFPZ0fy5z20bJzy32jbG4165F54Fv5fZFbzpK/NA12878_S1.bam']
 Success
 2460858
 ```
 
-The server tells the client to access the Platinum Genomes BAM file from EBI, but furthermore to access a specific *byte* range containing the desired genomic range. Thus the server handles the genomic range lookup, so the client doesn't need index files. This will benefit genome browsers, which today sometimes have to fetch a ~100 MiB BAI file in order to take a far smaller BAM slice for visualization. (The server also gives the client the BAM header in the 'prefix', making it a bit easier to deliver a well-formed BAM.) CRAM slicing works in just the same way, differing only in the server-side index construction method, which the client is abstracted from.
+The server tells the client to access the Platinum Genomes BAM file from EBI, but furthermore to access a specific *byte* range containing the desired genomic range. Thus the server handles the genomic range lookup, so the client doesn't need index files. This will benefit genome browsers, which today sometimes have to fetch a ~100 MiB BAI file in order to take a far smaller BAM slice for visualization. (The server also gives the client the BAM header in an inline data URI prefixed to the byte range, facilitating delivery of a well-formed BAM.) CRAM slicing works in just the same way, differing only in the server-side index construction method, which the client is abstracted from.
 
 Here's a diagram illustrating this core mechanic:
 
