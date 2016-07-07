@@ -58,7 +58,8 @@ def get(namespace, accession, format, verbose=False, **kwargs):
         if item['url'].startswith('data:'):
             # emit a blob given inline as a data URI. typically contains a format-specific
             # header or footer/EOF when taking a genomic range slice.
-            sys.stdout.write(base64.b64decode(item['url'][(item['url'].index(',')+1):]))
+            encoded_blob = item['url'][(item['url'].index(',')+1):]
+            sys.stdout.write(base64.b64decode(urllib.unquote(encoded_blob)))
             sys.stdout.flush()
         else:
             # delegate to curl to access the URL given in the ticket, including any
