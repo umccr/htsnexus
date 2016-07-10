@@ -13,7 +13,7 @@ project(htsnexus)
 # After build, double-check external/src/htslib-stamp/htslib-build-out.log
 # to make sure CFLAGS were set as expected
 ExternalProject_Add(htslib
-    URL https://github.com/samtools/htslib/archive/1.3.zip
+    URL https://github.com/samtools/htslib/archive/1.3.1.zip
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/external
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE 1
@@ -31,7 +31,7 @@ set_property(TARGET libhts PROPERTY IMPORTED_LOCATION ${LIBHTS_A})
 
 # Also build samtools executable for use in integration tests
 ExternalProject_Add(samtools
-    URL https://github.com/samtools/samtools/archive/1.3.zip
+    URL https://github.com/samtools/samtools/archive/1.3.1.zip
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/external
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE 1
@@ -60,7 +60,11 @@ add_executable(htsnexus_index_cram src/htsnexus_index_cram.cc src/htsnexus_index
 add_dependencies(htsnexus_index_cram htslib samtools)
 target_link_libraries(htsnexus_index_cram libhts sqlite3 z)
 
-install(TARGETS htsnexus_index_bam htsnexus_index_cram DESTINATION bin)
+add_executable(bgzip_lines src/bgzip_lines.cc)
+add_dependencies(bgzip_lines htslib)
+target_link_libraries(bgzip_lines libhts z)
+
+install(TARGETS htsnexus_index_bam htsnexus_index_cram bgzip_lines DESTINATION bin)
 
 ################################
 # Testing
