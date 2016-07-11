@@ -10,7 +10,7 @@ import json
 import re
 from copy import deepcopy
 
-DEFAULT_SERVER='http://htsnexus.rnd.dnanex.us/v1'
+DEFAULT_SERVER='http://htsnexus.rnd.dnanex.us/v1/reads'
 
 # convert a "22:1000-2000" genomic range string to a formatted query string
 def genomic_range_query_string(genomic_range):
@@ -24,8 +24,14 @@ def genomic_range_query_string(genomic_range):
 # In particular the ticket will specify a URL at which the desired data can be
 # accessed (possibly with a byte range and auth headers).
 def get_ticket(namespace, accession, format, server=DEFAULT_SERVER, genomic_range=None, verbose=False):
+    # rewrite server endpoint for variants: a temporary hack so that this client
+    # can continue to address the other GA4GH prototype servers while we talk
+    # about how the URL endpoints should look.
+    server_endpoint = server
+    if server_endpoint.endswith("/reads") and format == 'VCF':
+        server_endpoint = server_endpoint[:-6] + "/variants"
     # construct query URL
-    query_url = '/'.join([server, ('reads' if format != 'VCF' else 'variants'), urllib.quote(namespace), urllib.quote(accession)])
+    query_url = '/'.join([server_endpoint, urllib.quote(namespace), urllib.quote(accession)])
     query_url = query_url + "?format=" + urllib.quote(format)
     if genomic_range:
         query_url = query_url + '&' + genomic_range_query_string(genomic_range)
