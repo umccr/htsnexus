@@ -138,6 +138,13 @@ class HTSRoutes {
 
         return ans;
     }
+
+    getVariants(request, _) {
+        if (request.query.format === undefined || request.query.format === "VCF") {
+            return this.htsfiles_common(request, 'vcf', _);
+        }
+        throw new Errors.UnsupportedFormat("Unrecognized/unsupported format: " + request.query.format);
+    }
 }
 
 module.exports.register = (server, config, next) => {
@@ -146,6 +153,12 @@ module.exports.register = (server, config, next) => {
         method: 'GET',
         path:'/v1/reads/{namespace}/{accession}',
         handler: protocol.handler((request, _) => impl.getReads(request, _)),
+        config: {cors: true}
+    });
+    server.route({
+        method: 'GET',
+        path:'/v1/variants/{namespace}/{accession}',
+        handler: protocol.handler((request, _) => impl.getVariants(request, _)),
         config: {cors: true}
     });
     return next();

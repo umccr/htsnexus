@@ -361,6 +361,104 @@ describe("Server", function() {
         });
     });
 
+    describe("GET variants", function() {
+        it("should serve the URL for a VCF", function(_) {
+            let res = req("/variants/htsnexus_test/1000genomes?format=VCF", _);
+            expect(res.statusCode).to.be(200);
+            expect(res.headers['access-control-allow-origin']).to.be('https://www.dnanexus.com');
+            expect(res.body.urls.length).to.be(1);
+            expect(res.body.urls[0].url).to.be.a('string');
+            expect(res.body.urls[0].url).to.match(/http.*/);
+            expect(res.body.urls[0].headers.range).to.be("bytes=0-2595858");
+            expect(res.body.format).to.be('VCF');
+        });
+
+        it("should serve the URL and byte range for a genomic range slice", function(_) {
+            let res = req("/variants/htsnexus_test/1000genomes?format=VCF&referenceName=22&start=16000000&end=16300000", _);
+            expect(res.statusCode).to.be(200);
+            expect(res.body.urls.length).to.be(3);
+            expect(res.body.urls[1].url).to.be.a('string');
+            expect(res.body.urls[1].url).to.match(/http.*/);
+            expect(res.body.urls[1].headers.range).to.be("bytes=1853118-2378175");
+            expect(res.body.format).to.be('VCF');
+            expect(res.body.reference).to.be('GRCh37');
+
+            expect(res.body.urls[0].url).to.be.a('string');
+            expect(res.body.urls[0].url).to.match(/data:.*/);
+            let buf = new Buffer(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1), 'base64');
+            expect(buf[0]).to.be(0x1f);
+            expect(buf[1]).to.be(0x8b);
+
+            expect(res.body.urls[2].url).to.be.a('string');
+            expect(res.body.urls[2].url).to.match(/data:.*/);
+            buf = new Buffer(res.body.urls[2].url.substring(res.body.urls[2].url.indexOf(',')+1), 'base64');
+            expect(buf[0]).to.be(0x1f);
+            expect(buf[1]).to.be(0x8b);
+            expect(buf.length).to.be(28);
+        });
+
+        it("should serve the byte range for a whole reference sequence", function(_) {
+            let res = req("/variants/htsnexus_test/1000genomes?format=VCF&referenceName=21", _);
+            expect(res.statusCode).to.be(200);
+            expect(res.body.urls.length).to.be(3);
+            expect(res.body.urls[1].url).to.be.a('string');
+            expect(res.body.urls[1].url).to.match(/http.*/);
+            expect(res.body.urls[1].headers.range).to.be("bytes=8748-1853761");
+            expect(res.body.format).to.be('VCF');
+            expect(res.body.reference).to.be('GRCh37');
+
+            expect(res.body.urls[0].url).to.be.a('string');
+            expect(res.body.urls[0].url).to.match(/data:.*/);
+            let buf = new Buffer(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1), 'base64');
+            expect(buf[0]).to.be(0x1f);
+            expect(buf[1]).to.be(0x8b);
+
+            expect(res.body.urls[2].url).to.be.a('string');
+            expect(res.body.urls[2].url).to.match(/data:.*/);
+            buf = new Buffer(res.body.urls[2].url.substring(res.body.urls[2].url.indexOf(',')+1), 'base64');
+            expect(buf[0]).to.be(0x1f);
+            expect(buf[1]).to.be(0x8b);
+            expect(buf.length).to.be(28);
+        });
+
+        it("should serve empty result sets", function(_) {
+            let res = req("/variants/htsnexus_test/1000genomes?referenceName=22&start=1&end=10000", _);
+            expect(res.statusCode).to.be(200);
+            expect(res.body.format).to.be('VCF');
+            expect(res.body.urls.length).to.be(2);
+
+            expect(res.body.urls[0].url).to.be.a('string');
+            expect(res.body.urls[0].url).to.match(/data:.*/);
+            let buf = new Buffer(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1), 'base64');
+            expect(buf[0]).to.be(0x1f);
+            expect(buf[1]).to.be(0x8b);
+
+            expect(res.body.urls[1].url).to.be.a('string');
+            expect(res.body.urls[1].url).to.match(/data:.*/);
+            buf = new Buffer(res.body.urls[1].url.substring(res.body.urls[1].url.indexOf(',')+1), 'base64');
+            expect(buf[0]).to.be(0x1f);
+            expect(buf[1]).to.be(0x8b);
+            expect(buf.length).to.be(28);
+
+            res = req("/variants/htsnexus_test/1000genomes?referenceName=XXX", _);
+            expect(res.statusCode).to.be(200);
+            expect(res.body.urls.length).to.be(2);
+
+            expect(res.body.urls[0].url).to.be.a('string');
+            expect(res.body.urls[0].url).to.match(/data:.*/);
+            buf = new Buffer(res.body.urls[0].url.substring(res.body.urls[0].url.indexOf(',')+1), 'base64');
+            expect(buf[0]).to.be(0x1f);
+            expect(buf[1]).to.be(0x8b);
+
+            expect(res.body.urls[1].url).to.be.a('string');
+            expect(res.body.urls[1].url).to.match(/data:.*/);
+            buf = new Buffer(res.body.urls[1].url.substring(res.body.urls[1].url.indexOf(',')+1), 'base64');
+            expect(buf[0]).to.be(0x1f);
+            expect(buf[1]).to.be(0x8b);
+            expect(buf.length).to.be(28);
+        });
+    });
+
     after(function(_) {
         if (server) {
             server.stop({timeout: 1000}, _);
