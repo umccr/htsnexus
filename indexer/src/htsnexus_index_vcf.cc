@@ -60,7 +60,7 @@ shared_ptr<bcf_hdr_t> read_vcf_header(const char* filename) {
 // additional BGZF blocks can be appended.
 string generate_vcf_header(const bcf_hdr_t* header, bool bgzf_fragment) {
     // open a temp file (descriptor)
-    char tmpfn[16];
+    char tmpfn[256];
     strcpy(tmpfn, "/tmp/XXXXXX.vcf.gz");
     int tmpfd = mkstemps(tmpfn,7);
     if (tmpfd < 0) {
