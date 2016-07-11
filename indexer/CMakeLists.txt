@@ -64,7 +64,11 @@ add_executable(bgzip_lines src/bgzip_lines.cc)
 add_dependencies(bgzip_lines htslib)
 target_link_libraries(bgzip_lines libhts z)
 
-install(TARGETS htsnexus_index_bam htsnexus_index_cram bgzip_lines DESTINATION bin)
+add_executable(htsnexus_index_vcf src/htsnexus_index_vcf.cc src/htsnexus_index_util.cc)
+add_dependencies(htsnexus_index_vcf htslib)
+target_link_libraries(htsnexus_index_vcf libhts sqlite3 z)
+
+install(TARGETS htsnexus_index_bam htsnexus_index_cram bgzip_lines htsnexus_index_vcf DESTINATION bin)
 
 ################################
 # Testing

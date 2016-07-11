@@ -7,3 +7,4 @@ htsnexus_index_bam
 htsnexus_index_cram
 /dxapp/resources/usr/local/bin/htsnexus_downsample_index.py
 bgzip_lines
+htsnexus_index_vcf

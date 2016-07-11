@@ -175,3 +175,7 @@ void insert_block_index_entry(sqlite3_stmt* insert_block_stmt, const char* dbid,
         throw runtime_error("Error resetting statement: insert into htsfiles_blocks...");
     }
 }
+
+string bgzf_eof() {
+    return string("\037\213\010\4\0\0\0\0\0\377\6\0\102\103\2\0\033\0\3\0\0\0\0\0\0\0\0\0", 28);
+}

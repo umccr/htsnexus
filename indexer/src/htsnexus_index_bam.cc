@@ -36,10 +36,9 @@ void insert_block_index_entry(sqlite3_stmt* insert_block_stmt, const char* dbid,
                               int64_t block_lo, int64_t block_hi,
                               int tid, int seq_lo, int seq_hi,
                               const string& prefix, const string& suffix);
+string bgzf_eof();
 
 /*************************************************************************************************/
-
-const string BAM_EOF("\037\213\010\4\0\0\0\0\0\377\6\0\102\103\2\0\033\0\3\0\0\0\0\0\0\0\0\0", 28);
 
 // Serialize the BAM header to a BGZF fragment, to which additional BGZF
 // blocks containing alignments can be appended. Here be an ugly hack...
@@ -125,7 +124,7 @@ unsigned bam_block_index(sqlite3* dbh, const char* reference, const char* dbid, 
 
     // insert the htsfiles_blocks_meta entry
     insert_block_index_meta(dbh, reference, dbid, string(header->text, header->l_text),
-                            bam_header_bgzf, BAM_EOF);
+                            bam_header_bgzf, bgzf_eof());
 
     // Now scan the BAM file to populate the block index. This is a bit
     // complicated because we're bookkeeping on two interleaved structures:
