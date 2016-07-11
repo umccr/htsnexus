@@ -80,7 +80,7 @@ void insert_htsfile(sqlite3* dbh, const char* dbid, const char* format, const ch
         sqlite3_bind_text(stmt.get(), 3, name_space, -1, 0) ||
         sqlite3_bind_text(stmt.get(), 4, accession, -1, 0) ||
         sqlite3_bind_text(stmt.get(), 5, url, -1, 0) ||
-        (file_size >= 0 ? sqlite3_bind_int(stmt.get(), 6, file_size)
+        (file_size >= 0 ? sqlite3_bind_int64(stmt.get(), 6, file_size)
                         : sqlite3_bind_null(stmt.get(), 6))) {
         throw runtime_error("Failed to bind: insert into htsfiles...");
     }
@@ -154,8 +154,8 @@ void insert_block_index_entry(sqlite3_stmt* insert_block_stmt, const char* dbid,
     }
     if (tid != -1) {
         if (sqlite3_bind_text(insert_block_stmt, 4, target_names.at(tid).c_str(), -1, 0) ||
-            sqlite3_bind_int(insert_block_stmt, 5, seq_lo) ||
-            sqlite3_bind_int(insert_block_stmt, 6, seq_hi)) {
+            sqlite3_bind_int64(insert_block_stmt, 5, seq_lo) ||
+            sqlite3_bind_int64(insert_block_stmt, 6, seq_hi)) {
             throw runtime_error("Failed to bind: insert into htsfiles_blocks...");
         }
     }
