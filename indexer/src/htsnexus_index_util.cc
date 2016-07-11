@@ -12,15 +12,18 @@ using namespace std;
 const char* schema =
     "begin;"
     "create table if not exists htsfiles (_dbid text primary key, format text not null, \
-        namespace text not null, accession text not null, url text not null, file_size integer);"
+        namespace text not null, accession text not null, url text not null, \
+        file_size integer check(file_size is null or file_size >= 0));"
     "create unique index if not exists htsfiles_namespace_accession on htsfiles(namespace,accession,format);"
     "create table if not exists htsfiles_blocks_meta (_dbid text primary key, reference text not null, \
         header text not null, slice_prefix blob, slice_suffix blob, \
         foreign key(_dbid) references htsfiles(_dbid));"
-    "create table if not exists htsfiles_blocks (_dbid text not null, byteLo integer not null, \
-        byteHi integer not null, seq text, seqLo integer, seqHi integer, \
-        block_prefix blob, block_suffix blob, \
-        foreign key(_dbid) references htsfiles_index_meta(_dbid));"
+    "create table if not exists htsfiles_blocks (_dbid text not null, \
+        byteLo integer not null check(byteLo >= 0), byteHi integer not null check(byteHi > byteLo), \
+        seq text check(seq is not null or (seqLo is null and seqHi is null)), \
+        seqLo integer check(seq is null or (seqLo is not null and seqLo >= 0)), \
+        seqHi integer check(seq is null or (seqHi is not null and seqHi >= seqLo)), \
+        block_prefix blob, block_suffix blob, foreign key(_dbid) references htsfiles_index_meta(_dbid));"
     "create index if not exists htsfiles_blocks_index1 on htsfiles_blocks(_dbid,seq,seqLo,seqHi);"
     "create index if not exists htsfiles_blocks_index2 on htsfiles_blocks(_dbid,seq,seqHi);"
     "commit";
@@ -77,7 +80,7 @@ void insert_htsfile(sqlite3* dbh, const char* dbid, const char* format, const ch
         sqlite3_bind_text(stmt.get(), 3, name_space, -1, 0) ||
         sqlite3_bind_text(stmt.get(), 4, accession, -1, 0) ||
         sqlite3_bind_text(stmt.get(), 5, url, -1, 0) ||
-        (file_size >= 0 ? sqlite3_bind_int(stmt.get(), 6, file_size)
+        (file_size >= 0 ? sqlite3_bind_int64(stmt.get(), 6, file_size)
                         : sqlite3_bind_null(stmt.get(), 6))) {
         throw runtime_error("Failed to bind: insert into htsfiles...");
     }
@@ -151,8 +154,8 @@ void insert_block_index_entry(sqlite3_stmt* insert_block_stmt, const char* dbid,
     }
     if (tid != -1) {
         if (sqlite3_bind_text(insert_block_stmt, 4, target_names.at(tid).c_str(), -1, 0) ||
-            sqlite3_bind_int(insert_block_stmt, 5, seq_lo) ||
-            sqlite3_bind_int(insert_block_stmt, 6, seq_hi)) {
+            sqlite3_bind_int64(insert_block_stmt, 5, seq_lo) ||
+            sqlite3_bind_int64(insert_block_stmt, 6, seq_hi)) {
             throw runtime_error("Failed to bind: insert into htsfiles_blocks...");
         }
     }
