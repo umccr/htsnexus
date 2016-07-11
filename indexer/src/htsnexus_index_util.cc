@@ -12,15 +12,18 @@ using namespace std;
 const char* schema =
     "begin;"
     "create table if not exists htsfiles (_dbid text primary key, format text not null, \
-        namespace text not null, accession text not null, url text not null, file_size integer);"
+        namespace text not null, accession text not null, url text not null, \
+        file_size integer check(file_size is null or file_size >= 0));"
     "create unique index if not exists htsfiles_namespace_accession on htsfiles(namespace,accession,format);"
     "create table if not exists htsfiles_blocks_meta (_dbid text primary key, reference text not null, \
         header text not null, slice_prefix blob, slice_suffix blob, \
         foreign key(_dbid) references htsfiles(_dbid));"
-    "create table if not exists htsfiles_blocks (_dbid text not null, byteLo integer not null, \
-        byteHi integer not null, seq text, seqLo integer, seqHi integer, \
-        block_prefix blob, block_suffix blob, \
-        foreign key(_dbid) references htsfiles_index_meta(_dbid));"
+    "create table if not exists htsfiles_blocks (_dbid text not null, \
+        byteLo integer not null check(byteLo >= 0), byteHi integer not null check(byteHi > byteLo), \
+        seq text check(seq is not null or (seqLo is null and seqHi is null)), \
+        seqLo integer check(seq is null or (seqLo is not null and seqLo >= 0)), \
+        seqHi integer check(seq is null or (seqHi is not null and seqHi >= seqLo)), \
+        block_prefix blob, block_suffix blob, foreign key(_dbid) references htsfiles_index_meta(_dbid));"
     "create index if not exists htsfiles_blocks_index1 on htsfiles_blocks(_dbid,seq,seqLo,seqHi);"
     "create index if not exists htsfiles_blocks_index2 on htsfiles_blocks(_dbid,seq,seqHi);"
     "commit";
