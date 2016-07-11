@@ -10,7 +10,7 @@ import json
 import re
 from copy import deepcopy
 
-DEFAULT_SERVER='http://htsnexus.rnd.dnanex.us/v1/reads'
+DEFAULT_SERVER='http://htsnexus.rnd.dnanex.us/v1'
 
 # convert a "22:1000-2000" genomic range string to a formatted query string
 def genomic_range_query_string(genomic_range):
@@ -25,7 +25,7 @@ def genomic_range_query_string(genomic_range):
 # accessed (possibly with a byte range and auth headers).
 def get_ticket(namespace, accession, format, server=DEFAULT_SERVER, genomic_range=None, verbose=False):
     # construct query URL
-    query_url = '/'.join([server, urllib.quote(namespace), urllib.quote(accession)])
+    query_url = '/'.join([server, ('reads' if format != 'VCF' else 'variants'), urllib.quote(namespace), urllib.quote(accession)])
     query_url = query_url + "?format=" + urllib.quote(format)
     if genomic_range:
         query_url = query_url + '&' + genomic_range_query_string(genomic_range)
@@ -84,7 +84,7 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true', help='verbose log to standard error')
     parser.add_argument('namespace', type=str, help="accession namespace")
     parser.add_argument('accession', type=str, help="accession")
-    parser.add_argument('format', type=str, nargs='?', default='BAM', choices=['BAM','bam','CRAM','cram'], help="format")
+    parser.add_argument('format', type=str, nargs='?', default='BAM', choices=['BAM','bam','CRAM','cram','VCF','vcf'], help="format")
     args = parser.parse_args()
     args.format = args.format.upper()
 
