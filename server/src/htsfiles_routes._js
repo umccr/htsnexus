@@ -1,5 +1,6 @@
 "use strict";
 
+const assert = require('assert');
 const protocol = require('./protocol');
 const Errors = protocol.Errors;
 
@@ -49,6 +50,7 @@ class HTSRoutes {
         };
 
         if (typeof info.file_size === 'number') {
+            assert(info.file_size > 0);
             ans.urls[0].headers.range = "bytes=" + 0 + "-" + (info.file_size-1);
         }
 
@@ -82,6 +84,7 @@ class HTSRoutes {
             if (rslt['count(*)']>0) {
                 let lo = rslt['min(byteLo)'];
                 let hi = rslt['max(byteHi)'];
+                assert(lo >= 0 && hi > lo);
                 // formulate HTTP byte range header (fully closed)
                 ans.urls[0].headers.range = "bytes=" + lo + "-" + (hi-1);
             } else {

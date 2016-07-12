@@ -13,7 +13,7 @@ const char* schema =
     "begin;"
     "create table if not exists htsfiles (_dbid text primary key, format text not null, \
         namespace text not null, accession text not null, url text not null, \
-        file_size integer check(file_size is null or file_size >= 0));"
+        file_size integer check(file_size is null or file_size > 0));"
     "create unique index if not exists htsfiles_namespace_accession on htsfiles(namespace,accession,format);"
     "create table if not exists htsfiles_blocks_meta (_dbid text primary key, reference text not null, \
         header text not null, slice_prefix blob, slice_suffix blob, \
