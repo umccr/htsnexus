@@ -4,7 +4,7 @@ set -o pipefail
 cd "${HTSNEXUS_HOME}"
 source test/bash-tap-bootstrap
 
-plan tests 68
+plan tests 73
 
 # use htsnexus_index_bam to build the test database
 DBFN="${TMPDIR}/htsnexus_integration_test.db"
@@ -20,6 +20,9 @@ is "$?" "0" "index BAM"
 
 indexer/src/htsnexus_downsample_index.py "$DBFN"
 is "$?" "0" "downsample index"
+
+indexer/src/htsnexus_bin_index.py "$DBFN"
+is "$?" "0" "bin index"
 
 # start the server
 server_pid=""
@@ -93,8 +96,16 @@ is "$output" "7820" "read BAM slice from Heng Li's bamsvr - record count"
 # CRAM #
 ########
 
-indexer/htsnexus_index_cram --reference GRCh37 "$DBFN" htsnexus_test NA12878 test/htsnexus_test_NA12878.cram "https://dl.dnanex.us/F/D/fkx3bPPfXP8F0z61bfGJ8JkjZ05fBpyyyZy8jf1Z/htsnexus_test_NA12878.cram"
+rm -f "${DBFN}_CRAM"
+
+indexer/htsnexus_index_cram --reference GRCh37 "${DBFN}_CRAM" htsnexus_test NA12878 test/htsnexus_test_NA12878.cram "https://dl.dnanex.us/F/D/fkx3bPPfXP8F0z61bfGJ8JkjZ05fBpyyyZy8jf1Z/htsnexus_test_NA12878.cram"
 is "$?" "0" "index CRAM"
+
+indexer/src/htsnexus_bin_index.py "${DBFN}_CRAM"
+is "$?" "0" "bin CRAM index"
+
+indexer/src/htsnexus_merge_databases.sh "${DBFN}_CRAM" "$DBFN"
+is "$?" "0" "merge CRAM index"
 
 output=$((client/htsnexus.py -s http://localhost:48444/v1/reads htsnexus_test NA12878 cram || true) | head -c 4)
 is "$?" "0" "get CRAM (CalledProcessError above is normal)"
@@ -151,8 +162,15 @@ is "$output" "0" "read CRAM empty chromosome slice"
 ########
 
 gunzip -dc test/htsnexus_test_1000G.vcf.gz | indexer/bgzip_lines > "${TMPDIR}/htsnexus_test_1000G.vcf.gz"
-indexer/htsnexus_index_vcf --reference GRCh37 "$DBFN" htsnexus_test 1000genomes "${TMPDIR}/htsnexus_test_1000G.vcf.gz" "https://dl.dnanex.us/F/D/fQVjxXPJPbK76QBB8jzvG3F6PBqbj0YY8q277qXK/htsnexus_test_1000G.vcf.gz"
+rm -f "${DBFN}_VCF"
+indexer/htsnexus_index_vcf --reference GRCh37 "${DBFN}_VCF" htsnexus_test 1000genomes "${TMPDIR}/htsnexus_test_1000G.vcf.gz" "https://dl.dnanex.us/F/D/fQVjxXPJPbK76QBB8jzvG3F6PBqbj0YY8q277qXK/htsnexus_test_1000G.vcf.gz"
 is "$?" "0" "index VCF"
+
+indexer/src/htsnexus_bin_index.py "${DBFN}_VCF"
+is "$?" "0" "bin VCF index"
+
+indexer/src/htsnexus_merge_databases.sh "${DBFN}_VCF" "$DBFN"
+is "$?" "0" "merge VCF index"
 
 # the following url says 'reads' intentionally, to test client compatibility hack.
 output=$((client/htsnexus.py -s http://localhost:48444/v1/reads htsnexus_test 1000genomes VCF || true) | gzip -dc | wc -l)
