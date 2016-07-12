@@ -4,14 +4,14 @@ const assert = require('assert');
 const protocol = require('./protocol');
 const Errors = protocol.Errors;
 
-let MAX_SAFE_INTEGER = 9007199254740991;
+const MAX_POS = (1<<30);
 function resolveGenomicRange(query) {
     let ans = {
         seq: query.referenceName,
         lo: (query.start === undefined ? 0 : parseInt(query.start)),
-        hi: (query.end === undefined ? MAX_SAFE_INTEGER : parseInt(query.end))
+        hi: (query.end === undefined ? MAX_POS : parseInt(query.end))
     }
-    if (isNaN(ans.lo) || isNaN(ans.hi)) {
+    if (isNaN(ans.lo) || isNaN(ans.hi) || ans.hi > MAX_POS) {
         throw new Errors.InvalidInput("invalid positions in genomic range");
     }
     if (ans.lo < 0 || ans.hi < ans.lo) {
@@ -20,12 +20,29 @@ function resolveGenomicRange(query) {
     return ans;
 }
 
+// offsets of bin numbers at each level of the bin index
+const binOffsets = [1+16+256+4096, 1+16+256, 1+16, 1, 0];
+
 class HTSRoutes {
     constructor(db) {
         if (!db) {
             throw new Error("htsfiles_routes: no SQLite3 database provided")
         }
         this.db = db;
+    }
+
+    validate_db(_) {
+        let block_meta_count = 0;
+        try {
+            block_meta_count = this.db.get("select count(*) as ct from htsfiles_blocks_meta", _).ct;
+        } catch (exn) {
+            throw new Error("Invalid database: " + exn.toString());
+        }
+        if (block_meta_count > 0) {
+            if (!this.db.get("pragma index_info(htsfiles_blocks_bin_index)", _)) {
+                throw new Error("Database must be indexed using htsnexus_bin_index.py");
+            }
+        }
     }
 
     // serving/slicing logic common to format-specific routes
@@ -66,15 +83,17 @@ class HTSRoutes {
             }
             ans.reference = meta.reference;
 
-            // Calculate the byte range of BGZF blocks overlapping the query
-            // genomic range. The query probably has to scan index entries for
-            // all blocks in the file. In the future, we could implement a
-            // more efficient indexing strategy, such as UCSC binning, perhaps
-            // using SQL views.
             let rslt;
             if (genomicRange.seq !== '*') {
-                rslt = this.db.get("select count(*), min(byteLo), max(byteHi) from htsfiles_blocks where _dbid = ? and seq = ? and not (seqLo > ? or seqHi < ?)",
-                                   meta._dbid, genomicRange.seq, genomicRange.hi, genomicRange.lo, _);
+                // Calculate the byte range of BGZF blocks overlapping the query
+                // genomic range, searching all pertinent bins.
+                rslt = this.db.get("select count(*), min(byteLo), max(byteHi) from htsfiles_blocks where _dbid = ? and seq = ? and ((seqBin between ? and ?) or (seqBin between ? and ?) or (seqBin between ? and ?) or (seqBin between ? and ?) or seqBin = 0) and not (seqLo > ? or seqHi < ?)",
+                                   meta._dbid, genomicRange.seq,
+                                   (genomicRange.lo>>14)+binOffsets[0], (genomicRange.hi>>14)+binOffsets[0],
+                                   (genomicRange.lo>>18)+binOffsets[1], (genomicRange.hi>>18)+binOffsets[1],
+                                   (genomicRange.lo>>22)+binOffsets[2], (genomicRange.hi>>22)+binOffsets[2],
+                                   (genomicRange.lo>>26)+binOffsets[3], (genomicRange.hi>>26)+binOffsets[3],
+                                   genomicRange.hi, genomicRange.lo, _);
             } else {
                 // unmapped reads
                 rslt = this.db.get("select count(*), min(byteLo), max(byteHi) from htsfiles_blocks where _dbid = ? and seq is null",
@@ -151,20 +170,25 @@ class HTSRoutes {
 }
 
 module.exports.register = (server, config, next) => {
-    let impl = new HTSRoutes(config.db);
-    server.route({
-        method: 'GET',
-        path:'/v1/reads/{namespace}/{accession}',
-        handler: protocol.handler((request, _) => impl.getReads(request, _)),
-        config: {cors: true}
+    let impl = new HTSRoutes(config.db)
+    impl.validate_db((err) => {
+        if (err) {
+            throw err;
+        }
+        server.route({
+            method: 'GET',
+            path:'/v1/reads/{namespace}/{accession}',
+            handler: protocol.handler((request, _) => impl.getReads(request, _)),
+            config: {cors: true}
+        });
+        server.route({
+            method: 'GET',
+            path:'/v1/variants/{namespace}/{accession}',
+            handler: protocol.handler((request, _) => impl.getVariants(request, _)),
+            config: {cors: true}
+        });
+        return next();
     });
-    server.route({
-        method: 'GET',
-        path:'/v1/variants/{namespace}/{accession}',
-        handler: protocol.handler((request, _) => impl.getVariants(request, _)),
-        config: {cors: true}
-    });
-    return next();
 }
 
 module.exports.register.attributes = {
