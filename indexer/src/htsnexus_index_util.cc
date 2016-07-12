@@ -20,13 +20,14 @@ const char* schema =
         foreign key(_dbid) references htsfiles(_dbid));"
     "create table if not exists htsfiles_blocks (_dbid text not null, \
         byteLo integer not null check(byteLo >= 0), byteHi integer not null check(byteHi > byteLo), \
-        seq text check(seq is not null or (seqLo is null and seqHi is null)), \
+        seq text check(seq is not null or (seqLo is null and seqHi is null and seqBin is null)), \
         seqLo integer check(seq is null or (seqLo is not null and seqLo >= 0)), \
-        seqHi integer check(seq is null or (seqHi is not null and seqHi >= seqLo)), \
+        seqHi integer check(seq is null or (seqHi is not null and seqHi >= seqLo and seqHi <= 1073741824)), \
+        seqBin integer check(seq is null or (seqBin is not null and seqBin >= 0 and seqBin < 69905)), \
         block_prefix blob, block_suffix blob, foreign key(_dbid) references htsfiles_index_meta(_dbid));"
-    "create index if not exists htsfiles_blocks_index1 on htsfiles_blocks(_dbid,seq,seqLo,seqHi);"
-    "create index if not exists htsfiles_blocks_index2 on htsfiles_blocks(_dbid,seq,seqHi);"
+    "create index if not exists htsfiles_blocks_index on htsfiles_blocks(_dbid,seq,seqBin);"
     "commit";
+// 69905 = 1+16+256+4096+65536
 
 // open the htsnexus index database, or create it if necessary.
 shared_ptr<sqlite3> open_database(const char* db) {
@@ -126,10 +127,29 @@ void insert_block_index_meta(sqlite3* dbh, const char* reference, const char* db
 // prepare the statement to insert an entry into htsfiles_blocks
 shared_ptr<sqlite3_stmt> prepare_insert_block(sqlite3* dbh) {
     sqlite3_stmt *raw = 0;
-    if (sqlite3_prepare_v2(dbh, "insert into htsfiles_blocks values(?,?,?,?,?,?,?,?)", -1, &raw, 0)) {
+    if (sqlite3_prepare_v2(dbh, "insert into htsfiles_blocks values(?,?,?,?,?,?,?,?,?)", -1, &raw, 0)) {
         throw runtime_error("Failed to prepare statement: insert into htsfiles_blocks...\n");
     }
     return shared_ptr<sqlite3_stmt>(raw, [](sqlite3_stmt* s) { sqlite3_finalize(s); });
+}
+
+int bin(int seqLo, int seqHi) {
+    if (seqLo < 0 || seqHi < seqLo) {
+        throw runtime_error("invalid sequence positions");
+    }
+    if (seqHi > (1<<30)) {
+        throw runtime_error("sequence position exceeds maximum of 1073741824 for binning index:" + to_string(seqHi));
+    }
+
+    if ((seqLo>>14) == (seqHi>>14))
+        return (seqLo>>14)+1+16+256+4096;
+    if ((seqLo>>18) == (seqHi>>18))
+        return (seqLo>>18)+1+16+256;
+    if ((seqLo>>22) == (seqHi>>22))
+        return (seqLo>>22)+1+16;
+    if ((seqLo>>26) == (seqHi>>26))
+        return (seqLo>>26)+1;
+    return 0;
 }
 
 // insert one entry in htsfiles_blocks, given the prepared statement
@@ -147,7 +167,7 @@ void insert_block_index_entry(sqlite3_stmt* insert_block_stmt, const char* dbid,
         sqlite3_bind_int64(insert_block_stmt, 3, block_hi)) {
         throw runtime_error("Failed to bind: insert into htsfiles_blocks...");
     }
-    for (int i = 4; i <= 8; i++) {
+    for (int i = 4; i <= 9; i++) {
         if (sqlite3_bind_null(insert_block_stmt, i)) {
             throw runtime_error("Failed to bind: insert into htsfiles_blocks...");
         }
@@ -155,12 +175,13 @@ void insert_block_index_entry(sqlite3_stmt* insert_block_stmt, const char* dbid,
     if (tid != -1) {
         if (sqlite3_bind_text(insert_block_stmt, 4, target_names.at(tid).c_str(), -1, 0) ||
             sqlite3_bind_int64(insert_block_stmt, 5, seq_lo) ||
-            sqlite3_bind_int64(insert_block_stmt, 6, seq_hi)) {
+            sqlite3_bind_int64(insert_block_stmt, 6, seq_hi) ||
+            sqlite3_bind_int64(insert_block_stmt, 7, bin(seq_lo, seq_hi))) {
             throw runtime_error("Failed to bind: insert into htsfiles_blocks...");
         }
     }
-    if ((prefix.size() && sqlite3_bind_blob(insert_block_stmt, 7, prefix.c_str(), prefix.size(), 0)) ||
-        (suffix.size() && sqlite3_bind_blob(insert_block_stmt, 8, suffix.c_str(), suffix.size(), 0))) {
+    if ((prefix.size() && sqlite3_bind_blob(insert_block_stmt, 8, prefix.c_str(), prefix.size(), 0)) ||
+        (suffix.size() && sqlite3_bind_blob(insert_block_stmt, 9, suffix.c_str(), suffix.size(), 0))) {
         throw runtime_error("Failed to bind: insert into htsfiles_blocks...");
     }
 
