@@ -16,7 +16,7 @@ import shutil
 
 parser = argparse.ArgumentParser(description='htsnexus index downsampler utility')
 parser.add_argument('-r','--resolution', metavar='SIZE', type=int, default=262144, help='target slice resolution in bytes (default: 1MiB)')
-parser.add_argument('db', type=str, help="database file (will be modified in place!)")
+parser.add_argument('db', type=str, help="database file (output will be written to db.downsampled)")
 args = parser.parse_args()
 
 # make a copy of the database file
@@ -52,7 +52,7 @@ for file in files:
 
             # when the accumulated byte range for seq passes the desired
             # resolution, insert a consolidated destination index entry
-            assert (byteHi > byteLo and (seq is None or seqHi > seqLo))
+            assert (byteLo >= 0 and byteHi > byteLo and (seq is None or (seqLo >= 0 and seqHi > seqLo)))
             if byteHi - byteLo >= args.resolution:
                 dest_cursor.execute('insert into htsfiles_blocks values(?,?,?,?,?,?,?,?)', (file, byteLo, byteHi, seq, seqLo, seqHi, None, None))
                 byteLo = sys.maxint
