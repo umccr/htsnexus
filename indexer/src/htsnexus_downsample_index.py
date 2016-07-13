@@ -15,7 +15,7 @@ import sqlite3
 import shutil
 
 parser = argparse.ArgumentParser(description='htsnexus index downsampler utility')
-parser.add_argument('-r','--resolution', metavar='SIZE', type=int, default=262144, help='target slice resolution in bytes (default: 1MiB)')
+parser.add_argument('-r','--resolution', metavar='SIZE', type=int, default=262144, help='target slice resolution in bytes (default: 256KiB)')
 parser.add_argument('db', type=str, help="database file (output will be written to db.downsampled)")
 args = parser.parse_args()
 
