@@ -26,7 +26,7 @@
     "file": "src/code.sh",
     "execDepends": [
       {"name": "sqlite3"},
-      {"name": "pigz"}
+      {"name": "liblz4-tool"}
     ],
     "systemRequirements": {
       "main": {

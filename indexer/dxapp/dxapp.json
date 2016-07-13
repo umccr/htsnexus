@@ -43,7 +43,7 @@
     "execDepends": [
       {"name": "sqlite3"},
       {"name": "aria2"},
-      {"name": "pigz"}
+      {"name": "liblz4-tool"}
     ],
     "systemRequirements": {
       "main": {

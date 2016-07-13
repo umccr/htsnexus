@@ -9,9 +9,9 @@ main() {
         exit 0
     fi
 
-    dx cat "${htsnexus_index[0]}" | pigz -dc > htsnexus_index
+    dx cat "${htsnexus_index[0]}" | lz4 -dc > htsnexus_index
     for i in $(seq 1 $(expr $N - 1)); do
-        dx cat "${htsnexus_index[$i]}" | pigz -dc > piece
+        dx cat "${htsnexus_index[$i]}" | lz4 -dc > piece
         htsnexus_merge_databases.sh piece htsnexus_index
         rm -f piece
     done
@@ -20,7 +20,7 @@ main() {
     sqlite3 -batch -bail htsnexus_index "select count(*) from htsfiles"
     sqlite3 -batch -bail htsnexus_index "select count(*) from htsfiles_blocks_meta"
 
-    id=$(pigz -c htsnexus_index |
-            dx upload --destination "${output_name}" --type htsnexus_index --brief -)
+    id=$(lz4 -c htsnexus_index |
+            dx upload --destination "${output_name}.lz4" --type htsnexus_index --brief -)
     dx-jobutil-add-output index_db "$id"
 }

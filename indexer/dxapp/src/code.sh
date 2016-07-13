@@ -62,7 +62,7 @@ main() {
         mv /home/dnanexus/out/index_db/htsnexus_index.downsampled /home/dnanexus/out/index_db/htsnexus_index
     fi
 
-    id=$(pigz -c /home/dnanexus/out/index_db/htsnexus_index |
-            dx upload --destination "${output_name}" --type htsnexus_index --brief -)
+    id=$(lz4 -c /home/dnanexus/out/index_db/htsnexus_index |
+            dx upload --destination "${output_name}.lz4" --type htsnexus_index --brief -)
     dx-jobutil-add-output index_db "$id"
 }
