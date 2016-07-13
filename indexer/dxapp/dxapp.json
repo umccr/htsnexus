@@ -47,9 +47,11 @@
     ],
     "systemRequirements": {
       "main": {
-        "instanceType": "mem2_hdd2_x2"
+        "instanceType": "mem3_ssd2_x4"
       }
-    }
+    },
+    "distribution": "Ubuntu",
+    "release": "14.04"
   },
   "access": {
     "network": ["*"]

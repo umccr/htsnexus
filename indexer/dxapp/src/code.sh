@@ -21,7 +21,7 @@ main() {
         if [ "$i" -eq 0 ]; then
             dlfn=$(mktempdl "${urls[0]}")
             rm "$dlfn"
-            aria2c -x 10 -j 10 -s 10 -o "$dlfn" "${urls[0]}" & dlpid=$!
+            aria2c -x 10 -j 10 -s 10 -m 10 --retry-wait 30 -o "$dlfn" "${urls[0]}" & dlpid=$!
         fi
         wait $dlpid
 
@@ -30,7 +30,7 @@ main() {
             nexturl="${urls[$(expr $i + 1)]}"
             dlfn=$(mktempdl "$nexturl")
             rm "$dlfn"
-            aria2c -x 10 -j 10 -s 10 -o "$dlfn" "$nexturl" & dlpid=$!
+            aria2c -x 10 -j 10 -s 10 -m 10 --retry-wait 30 -o "$dlfn" "$nexturl" & dlpid=$!
         fi
 
         if ! grep -F "${accessions[$i]}" <(echo "${urls[$i]}"); then

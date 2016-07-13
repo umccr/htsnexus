@@ -1,13 +1,5 @@
 #!/bin/bash
 
-merge_sql="attach 'piece' as toMerge;
-begin;
-insert into htsfiles select * from toMerge.htsfiles;
-insert into htsfiles_blocks_meta select * from toMerge.htsfiles_blocks_meta;
-insert into htsfiles_blocks select * from toMerge.htsfiles_blocks;
-commit;
-detach toMerge"
-
 main() {
     set -ex -o pipefail
 
@@ -20,11 +12,13 @@ main() {
     dx cat "${htsnexus_index[0]}" | pigz -dc > htsnexus_index
     for i in $(seq 1 $(expr $N - 1)); do
         dx cat "${htsnexus_index[$i]}" | pigz -dc > piece
-        sqlite3 -batch -bail htsnexus_index "$merge_sql"
+        htsnexus_merge_databases.sh piece htsnexus_index
         rm -f piece
     done
 
     sqlite3 -batch -bail htsnexus_index "vacuum; analyze"
+    sqlite3 -batch -bail htsnexus_index "select count(*) from htsfiles"
+    sqlite3 -batch -bail htsnexus_index "select count(*) from htsfiles_blocks_meta"
 
     id=$(pigz -c htsnexus_index |
             dx upload --destination "${output_name}" --type htsnexus_index --brief -)
