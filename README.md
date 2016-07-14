@@ -1,6 +1,6 @@
 # htsnexus
 
-**Experimental web service for accessing and slicing bam/cram/vcf.bgzip/bcf data** <a href="https://travis-ci.org/dnanexus-rnd/htsnexus"><img src="https://travis-ci.org/dnanexus-rnd/htsnexus.svg?branch=master"/></a>
+**Experimental web service for accessing and slicing bam/cram/vcf.bgzip data** <a href="https://travis-ci.org/dnanexus-rnd/htsnexus"><img src="https://travis-ci.org/dnanexus-rnd/htsnexus.svg?branch=master"/></a>
 
 This in an incubating proposal within the [GA4GH data working group](http://ga4gh.org/) towards a pragmatic web protocol for accessing large genomic datasets like reads and variants. Please see [this annotated slide deck](https://docs.google.com/a/dnanexus.com/presentation/d/1iATx04kwPz9V8-x_S4-eXmUbHJQt-AkOu4BL_xaE2nc/edit?usp=sharing) for further introduction and context, and [the working draft of the protocol specification](https://docs.google.com/document/d/1OSPfxdJ3uPoCfUVzMaekCOPF5sNEwqkJEUj-SjlECy0/edit?usp=sharing). 
 
@@ -44,7 +44,13 @@ Here are a few things you can do with htsnexus and samtools:
 ./htsnexus -r 11:10899000-10900000 lh3bamsvr EXA00001 | samtools view -h - | less -S
 ```
 
-At the moment only BAM and CRAM are supported as proof-of-concept; VCF/BCF are coming. The htsnexus client tool simply emits BAM/CRAM to standard output, which can be redirected to a file or piped into samtools. It delivers a well-formed BAM/CRAM file, with the proper header, even when slicing a genomic range. Here are the data accessions currently available:
+*Slice a bgzipped VCF*
+
+```bash
+./htsnexus -r 12:112204691-112247789 1000genomes 20130502_autosomes vcf | gzip -dc | grep rs671 | cut -f1-16
+```
+
+The htsnexus client tool simply emits BAM/CRAM/VCF to standard output, which can be redirected to a file or piped into samtools/bcftools. It delivers a well-formed BAM/CRAM/VCF file, with the proper header, even when slicing a genomic range. Here are the data accessions currently available:
 
 | namespace | accession | format |
 | --- | --- | --- |
@@ -52,6 +58,7 @@ At the moment only BAM and CRAM are supported as proof-of-concept; VCF/BCF are c
 | **ENCODE** <br/> ChIP-seq data released by the ENCODE DCC in Jan 2016 | ENCFF014ABI ENCFF024MPE ENCFF070QUN ENCFF090MZL ENCFF124VCI ENCFF137WND ENCFF180VYU ENCFF308BKD ENCFF373VCV ENCFF465GPJ ENCFF572JRO ENCFF630NYB ENCFF743FRI ENCFF800DAY ENCFF862PIC ENCFF866OLR ENCFF904PIO ENCFF929AIJ ENCFF946BKE ENCFF951SEJ | BAM |
 | **lh3bamsvr** <br/> Heng's examples | EXA00001 EXA00002 | BAM |
 | **1000genomes_low_coverage** <br/> Low-coverage whole-genome sequencing from the 1000 Genomes Project | <a href="http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/">2,535 individual accessions</a> (example usage above) | BAM, CRAM |
+| **1000genomes** <br/> 1000 Genomes Project variant calls | 20130502_autosomes | VCF
 
 (We recognize that a directory API method is needed instead of this Markdown table...)
 
