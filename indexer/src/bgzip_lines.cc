@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     while (getline(cin, line)) {
         // If we've buffered a partial BGZF block and this line isn't gonna fit
         // in its remaining capacity, flush it and start a new block.
-        H(bgzf_flush_try(fp, line.size()));
+        H(bgzf_flush_try(fp, line.size()+1));
         // If this is the first non-header line, start a new block.
         if (in_header && (line.size() > 0 && line[0] != '#')) {
             H(bgzf_flush(fp));
