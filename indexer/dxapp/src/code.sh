@@ -5,6 +5,12 @@ mktempdl() {
     echo $(basename $(mktemp -p . --suffix $(printf ".%s" "${url##*.}")))
 }
 
+rewrite_url() {
+    # DNAnexus-specific optimization: rewrite https://dl.dnanex.us/ URL to use local proxy
+    # just for downloading a temporary copy of the file to be indexed
+    echo "$1" | sed "s#https://dl.dnanex.us/#http://10.0.3.1:8090/#"
+}
+
 main() {
     set -ex -o pipefail
 
@@ -19,15 +25,16 @@ main() {
     dlfn=""
     for i in $(seq 0 $(expr $N - 1)); do
         if [ "$i" -eq 0 ]; then
+            nexturl=$(rewrite_url "${urls[0]}")
             dlfn=$(mktempdl "${urls[0]}")
             rm "$dlfn"
-            aria2c -x 10 -j 10 -s 10 -m 10 --retry-wait 30 -o "$dlfn" "${urls[0]}" & dlpid=$!
+            aria2c -x 10 -j 10 -s 10 -m 10 --retry-wait 30 -o "$dlfn" "$nexturl" & dlpid=$!
         fi
         wait $dlpid
 
         fn="$dlfn"
         if [ "$i" -lt "$(expr $N - 1)" ]; then
-            nexturl="${urls[$(expr $i + 1)]}"
+            nexturl=$(rewrite_url "${urls[$(expr $i + 1)]}")
             dlfn=$(mktempdl "$nexturl")
             rm "$dlfn"
             aria2c -x 10 -j 10 -s 10 -m 10 --retry-wait 30 -o "$dlfn" "$nexturl" & dlpid=$!
