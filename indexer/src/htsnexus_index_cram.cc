@@ -71,8 +71,49 @@ void cram_slice_ranges(cram_fd *fd, cram_container* c, cram_slice* s, map<int, t
         // unmapped
         ans[-1] = make_tuple(-1,-1);
     } else if (s->hdr->ref_seq_id == -2) {
-        // TODO: something along the lines of cram_index_build_multiref in cram_index.c
-        throw runtime_error("Unable to index this CRAM file due to multi-ref slice. Please complain upstream.");
+        // "multi-ref" slice: decode and scan as in htslib:cram_index.c:cram_index_build_multiref
+        if (0 != cram_decode_slice(fd, c, s, fd->header)) {
+            throw runtime_error("cram_decode_slice failed");
+        }
+
+        int ref = -2, ref_start = -1, ref_end = -1;
+        for (int i = 0; i < s->hdr->num_records; i++) {
+            if (s->crecs[i].ref_id == ref) {
+                if (ref != -1) {
+                    if (s->crecs[i].apos <= ref_start) {
+                        throw runtime_error("unsorted within multi-ref slice");
+                    }
+                    ref_end = std::max(ref_end, s->crecs[i].aend);
+                }
+                continue;
+            }
+
+            if (ref != -2) {
+                auto p = ans.find(ref);
+                if (p != ans.end()) {
+                    ref_start = min(ref_start, get<0>(p->second));
+                    ref_end = max(ref_end, get<1>(p->second));
+                }
+                ans[ref] = make_tuple(ref_start, ref_end);
+            }
+
+            ref = s->crecs[i].ref_id;
+            if (ref != -1) {
+                ref_start = s->crecs[i].apos - 1;
+                ref_end = s->crecs[i].aend;
+            } else {
+                ref_start = ref_end = -1;
+            }
+        }
+
+        if (ref != -2) {
+            auto p = ans.find(ref);
+            if (p != ans.end()) {
+                ref_start = min(ref_start, get<0>(p->second));
+                ref_end = max(ref_end, get<1>(p->second));
+            }
+            ans[ref] = make_tuple(ref_start, ref_end);
+        }
     } else {
         throw runtime_error("Corrupt CRAM slice header (invalid ref_seq_id)");
     }
