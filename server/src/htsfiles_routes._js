@@ -20,6 +20,15 @@ function resolveGenomicRange(query) {
     return ans;
 }
 
+function rewriteDxUrl(reqHeaders, url) {
+    if (reqHeaders["dx-job-id"] && reqHeaders["dx-job-id"].length) {
+        // Optimization for requests from DNAnexus jobs: rewrite https://dl.dnanex.us/
+        // URL to address local proxy
+        return url.replace("https://dl.dnanex.us/", "http://10.0.3.1:8090/");
+    }
+    return url;
+}
+
 class HTSRoutes {
     constructor(db) {
         if (!db) {
@@ -42,7 +51,7 @@ class HTSRoutes {
             // format was given to us in lowercase for legacy reasons (reuse v0 database for v1 server)
             format: format.toUpperCase(),
             urls: [{
-                url: info.url,
+                url: rewriteDxUrl(request.headers, info.url),
                 headers: {
                   "referer": request.connection.info.protocol + '://' + request.info.host + request.url.path
                 }
