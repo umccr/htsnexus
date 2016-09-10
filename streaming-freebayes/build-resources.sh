@@ -26,4 +26,6 @@ docker run -t -i --rm \
            make -j $(nproc) -C freebayes/vcflib vcfuniq vcfstreamsort
            cp freebayes/bin/freebayes freebayes/vcflib/bin/vcffirstheader freebayes/vcflib/bin/vcfstreamsort freebayes/vcflib/bin/vcfuniq /io/usr/local/bin"
 
-chown -R "$SUDO_USER" $HERE/resources
+if [ -n "$SUDO_USER" ]; then
+  chown -R "$SUDO_USER" $HERE/resources
+fi
