@@ -2,9 +2,7 @@
 FROM ubuntu:trusty
 RUN apt-get update
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests python-requests curl parallel aria2 pigz dstat
-COPY freebayes bamtools vcffirstheader /usr/local/bin/
-COPY libbamtools.so.2.3.0 /usr/local/lib/
-RUN ldconfig
+COPY resources/ /
 ADD https://raw.githubusercontent.com/dnanexus-rnd/htsnexus/master/client/htsnexus.py /usr/local/bin/htsnexus
 RUN chmod +x /usr/local/bin/htsnexus
 RUN mkdir /app
