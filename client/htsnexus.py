@@ -8,9 +8,10 @@ import urllib
 import base64
 import json
 import re
+import os
 from copy import deepcopy
 
-DEFAULT_SERVER='http://htsnexus.rnd.dnanex.us/v1/reads'
+DEFAULT_SERVER = 'http://htsnexus.rnd.dnanex.us/v1/reads' if 'DX_JOB_ID' not in os.environ else 'http://htsnexus.rnd.dnanex.us/dxjob/v1/reads'
 
 # convert a "22:1000-2000" genomic range string to a formatted query string
 def genomic_range_query_string(genomic_range):
