@@ -29,11 +29,18 @@ class HTSRoutes {
     }
 
     // serving/slicing logic common to format-specific routes
-    htsfiles_common(request, format, _) {
+    htsfiles_common(request, format, dxjob, _) {
         let info = this.db.get("select * from htsfiles where format = ? and namespace = ? and accession = ?",
                                format, request.params.namespace, request.params.accession, _);
         if (!info) {
             throw new Errors.NotFound();
+        }
+
+        let dataUrl = info.url;
+        if (dxjob) {
+            // Optimization for requests from DNAnexus jobs: rewrite
+            // https://dl.dnanex.us/ URL to address local proxy
+            dataUrl = dataUrl.replace("https://dl.dnanex.us/", "http://10.0.3.1:8090/");
         }
 
         let ans = {
@@ -42,7 +49,7 @@ class HTSRoutes {
             // format was given to us in lowercase for legacy reasons (reuse v0 database for v1 server)
             format: format.toUpperCase(),
             urls: [{
-                url: info.url,
+                url: dataUrl,
                 headers: {
                   "referer": request.connection.info.protocol + '://' + request.info.host + request.url.path
                 }
@@ -111,14 +118,14 @@ class HTSRoutes {
         return ans;
     }
 
-    getReads(request, _) {
+    getReads(request, dxjob, _) {
         if (request.query.format === undefined || request.query.format === "BAM") {
             if (request.params.namespace == "lh3bamsvr") {
                 return this.lh3bamsvr(request, _);
             }
-            return this.htsfiles_common(request, 'bam', _);
+            return this.htsfiles_common(request, 'bam', dxjob, _);
         } else if (request.query.format === "CRAM") {
-            return this.htsfiles_common(request, 'cram', _);
+            return this.htsfiles_common(request, 'cram', dxjob, _);
         }
         throw new Errors.UnsupportedFormat("Unrecognized/unsupported format: " + request.query.format);
     }
@@ -142,9 +149,9 @@ class HTSRoutes {
         return ans;
     }
 
-    getVariants(request, _) {
+    getVariants(request, dxjob, _) {
         if (request.query.format === undefined || request.query.format === "VCF") {
-            return this.htsfiles_common(request, 'vcf', _);
+            return this.htsfiles_common(request, 'vcf', dxjob, _);
         }
         throw new Errors.UnsupportedFormat("Unrecognized/unsupported format: " + request.query.format);
     }
@@ -152,18 +159,18 @@ class HTSRoutes {
 
 module.exports.register = (server, config, next) => {
     let impl = new HTSRoutes(config.db);
-    server.route({
-        method: 'GET',
-        path:'/v1/reads/{namespace}/{accession}',
-        handler: protocol.handler((request, _) => impl.getReads(request, _)),
-        config: {cors: true}
-    });
-    server.route({
-        method: 'GET',
-        path:'/v1/variants/{namespace}/{accession}',
-        handler: protocol.handler((request, _) => impl.getVariants(request, _)),
-        config: {cors: true}
-    });
+    function route(path, handler) {
+        server.route({
+            method: 'GET',
+            path: path,
+            handler: protocol.handler(handler),
+            config: {cors: true}
+        });
+    }
+    route('/v1/reads/{namespace}/{accession}', (request, _) => impl.getReads(request, false, _));
+    route('/dxjob/v1/reads/{namespace}/{accession}', (request, _) => impl.getReads(request, true, _));
+    route('/v1/variants/{namespace}/{accession}', (request, _) => impl.getVariants(request, false, _));
+    route('/dxjob/v1/variants/{namespace}/{accession}', (request, _) => impl.getVariants(request, true, _));
     return next();
 }
 

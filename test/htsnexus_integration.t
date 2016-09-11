@@ -4,7 +4,7 @@ set -o pipefail
 cd "${HTSNEXUS_HOME}"
 source test/bash-tap-bootstrap
 
-plan tests 68
+plan tests 69
 
 # use htsnexus_index_bam to build the test database
 DBFN="${TMPDIR}/htsnexus_integration_test.db"
@@ -50,6 +50,7 @@ is "$?" "0" "read BAM chromosome slice"
 is "$output" "14955" "read BAM chromosome slice - approximate record count"
 
 BAMFN="${TMPDIR}/htsnexus_integration_test.bam"
+rm -f "$BAMFN"
 client/htsnexus.py -s http://localhost:48444/v1/reads -r 20 htsnexus_test NA12878 > "$BAMFN"
 is "$?" "0" "read BAM chromosome slice to file"
 is "$($samtools view -c "$BAMFN")" "14955" "read BAM chromosome slice to file - approximate record count"
@@ -89,6 +90,11 @@ output=$(client/htsnexus.py -s http://localhost:48444/v1/reads -r 11:10899000-10
 is "$?" "0" "read BAM slice from Heng Li's bamsvr"
 is "$output" "7820" "read BAM slice from Heng Li's bamsvr - record count"
 
+rm -f "${TMPDIR}/htsnexus_integration_test.stderr"
+(client/htsnexus.py -v -s http://localhost:48444/dxjob/v1/reads -r 11:5005000-5006000 htsnexus_test NA12878 > /dev/null 2> "${TMPDIR}/htsnexus_integration_test.stderr") || true
+grep "http://10.0.3.1:8090/" "${TMPDIR}/htsnexus_integration_test.stderr"
+is "$?" "0" "DNAnexus-optimized URL rewrite"
+
 ########
 # CRAM #
 ########
@@ -113,6 +119,7 @@ is "$?" "0" "read CRAM chromosome slice"
 is "$output" "14545" "read CRAM chromosome slice - record count"
 
 CRAMFN="${TMPDIR}/htsnexus_integration_test.cram"
+rm -f "$CRAMFN"
 client/htsnexus.py -s http://localhost:48444/v1/reads -r 20 htsnexus_test NA12878 cram > "$CRAMFN"
 is "$?" "0" "read CRAM chromosome slice to file"
 is $(head -c 4 "$CRAMFN") "CRAM" "read CRAM chromosome slice and get a CRAM file"
@@ -160,6 +167,7 @@ is "$?" "0" "read entire VCF"
 is "$output" "15000" "read entire VCF - line count"
 
 VCFFN="${TMPDIR}/htsnexus_integration_test.vcf"
+rm -f "$VCFFN"
 client/htsnexus.py -v -s http://localhost:48444/v1/variants -r 22 htsnexus_test 1000genomes VCF | gzip -dc > "$VCFFN"
 is "$?" "0" "read VCF chromosome slice"
 is "$(cat "${VCFFN}" | wc -l)" "5256" "read VCF chromosome slice - line count"
