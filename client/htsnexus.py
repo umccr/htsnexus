@@ -8,7 +8,6 @@ import urllib
 import base64
 import json
 import re
-import os
 from copy import deepcopy
 
 DEFAULT_SERVER='http://htsnexus.rnd.dnanex.us/v1/reads'
@@ -38,11 +37,8 @@ def get_ticket(namespace, accession, format, server=DEFAULT_SERVER, genomic_rang
         query_url = query_url + '&' + genomic_range_query_string(genomic_range)
     if verbose:
         print >>sys.stderr, ('Query URL: ' + query_url)
-    request_headers = {}
-    if 'DX_JOB_ID' in os.environ: # DNAnexus-specific cookie
-        request_headers['dx-job-id'] = os.environ['DX_JOB_ID']
     # issue request
-    response = requests.get(query_url, headers=request_headers)
+    response = requests.get(query_url)
     if response.status_code != 200:
         print >>sys.stderr, ("Error: HTTP status " + str(response.status_code))
         print >>sys.stderr, response.json()
