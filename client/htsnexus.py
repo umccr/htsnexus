@@ -79,7 +79,11 @@ def get(namespace, accession, format, verbose=False, **kwargs):
             if verbose:
                 print >>sys.stderr, ('Piping: ' + str(curlcmd))
                 sys.stderr.flush()
-            subprocess.check_call(curlcmd)
+            try:
+                subprocess.check_call(curlcmd)
+            except subprocess.CalledProcessError, exn:
+                # curl's stderr message is more informative than the CalledProcessError
+                sys.exit(exn.returncode)
 
     if verbose:
         print >>sys.stderr, 'Success'
