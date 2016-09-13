@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# sudo this script to update the samtools & freebayes executables under resources/
+# sudo this script to update the samtools & freebayes executables under resources/usr/local/bin/
 
 export SAMTOOLS_REVISION=1.3.1
 export FREEBAYES_REVISION=v1.0.2

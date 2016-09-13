@@ -4,8 +4,6 @@ RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -qq install -y 
 COPY resources/ /
 ADD https://raw.githubusercontent.com/dnanexus-rnd/htsnexus/master/client/htsnexus.py /usr/local/bin/htsnexus
 RUN chmod +x /usr/local/bin/htsnexus
-RUN mkdir /app
 WORKDIR /app/
-COPY main.sh subjob.sh hs37d5_interLCR_intervals.4Mbp.regions /app/
 ENV SHELL=/bin/bash HOME=/app
 ENTRYPOINT ["/app/main.sh"]
