@@ -9,6 +9,7 @@ export SERVER="$4"
 export NAMESPACE="$5"
 shift 5
 
+export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.1
 set -e -o pipefail
 
 # For each sample/"read group set" ID, use the htsnexus client to fetch a BAM
@@ -24,7 +25,7 @@ bams=()
 for id in "$@"; do
     bamfn=$(mktemp "${REGION}-${id}-XXXXXX.bam")
     # use parallel to call fetch with retry
-    parallel --retries 3 fetch "$id" "$bamfn" ::: 0
+    parallel --retries 5 fetch "$id" "$bamfn" ::: 0
     bams+=("$bamfn")
     # index the BAM slice -- this is unnecessary except to suppress an annoying
     # stderr warning from freebayes
@@ -38,7 +39,7 @@ bams_size=$(du -ch --apparent-size ${bams[@]} | tail -n1 | cut -f1)
 SECONDS=0
 freebayes --standard-filters --min-repeat-entropy 1 --no-partial-observations --min-alternate-fraction 0.1 \
     -f hs37d5.fa --region "$REGION" ${bams[@]}
->&2 echo "(${JOB}/${JOBS}) $REGION fetched ${bams_size} in ${T_FETCHING}s, freebayes took ${SECONDS}s"
+>&2 echo "(${JOB}/${JOBS}) $REGION fetched ${bams_size} in ${T_FETCHING}s, freebayes ran ${SECONDS}s"
 
 rm ${bams[@]}
 
