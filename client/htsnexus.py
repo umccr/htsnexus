@@ -70,7 +70,7 @@ def get(namespace, accession, format, verbose=False, **kwargs):
         else:
             # delegate to curl to access the URL given in the ticket, including any
             # HTTP request headers htsnexus instructed us to supply.
-            curlcmd = ['curl','-LSs']
+            curlcmd = ['curl','-LSs','--fail']
             if 'headers' in item:
                 for k, v in item['headers'].items():
                     curlcmd.append('-H')
