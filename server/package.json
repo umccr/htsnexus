@@ -17,13 +17,13 @@
   },
   "homepage": "https://github.com/dnanexus-rnd/htsnexus#readme",
   "dependencies": {
-    "babel": "5.8.35",
+    "babel": "6.5.2",
     "streamline": "1.0.9",
-    "hapi": "13.0.0",
-    "sqlite3": "3.1.1",
+    "hapi": "15.1.1",
+    "sqlite3": "3.1.6",
     "commander": "2.9.0",
-    "mocha": "2.4.5",
-    "request": "2.69.0",
+    "mocha": "3.1.2",
+    "request": "2.75.0",
     "expect.js": "0.3.1"
   }
 }
