@@ -3,6 +3,7 @@
 const assert = require('assert');
 const protocol = require('./protocol');
 const Errors = protocol.Errors;
+const azure = require('./azure');
 
 let MAX_SAFE_INTEGER = 9007199254740991;
 function resolveGenomicRange(query) {
@@ -41,6 +42,10 @@ class HTSRoutes {
             // Optimization for requests from DNAnexus jobs: rewrite
             // https://dl.dnanex.us/ URL to address local proxy
             dataUrl = dataUrl.replace("https://dl.dnanex.us/", "http://10.0.3.1:8090/");
+        }
+        if (azure.isBlobUrl(dataUrl)) {
+            // TODO: configurable expiration
+            dataUrl = azure.signBlobUrl(dataUrl, 60);
         }
 
         let ans = {

@@ -465,3 +465,28 @@ describe("Server", function() {
         }
     });
 });
+
+describe("Azure subsystem", function() {
+    const azure = require('../src/azure');
+
+    it('should distinguish Azure blob URLs', function() {
+        expect(azure.isBlobUrl("https://foobar.blob.core.windows.net/htsnexus/NA12878.cram")).to.be(true);
+        expect(azure.isBlobUrl("https://foobar.blob.core.windows.net/htsnexus")).to.be(false);
+        expect(azure.isBlobUrl("https://foobar.blob.core.windows.net")).to.be(false);
+        expect(azure.isBlobUrl("https://www.dnanexus.com/htsnexus/NA12878.cram")).to.be(false);
+    });
+
+    it('should generate SAS url', function() {
+        if (!process.env.AZURE_STORAGE_ACCOUNT || !process.env.AZURE_STORAGE_ACCESS_KEY) {
+            this.skip();
+        } else {
+            const storageAccount = process.env.AZURE_STORAGE_ACCOUNT;
+            azure.initialize({AZURE_STORAGE_ACCOUNT: storageAccount,
+                              AZURE_STORAGE_ACCESS_KEY: process.env.AZURE_STORAGE_ACCESS_KEY});
+            const signedUrl = azure.signBlobUrl("https://" + storageAccount + ".blob.core.windows.net/htsnexus/NA12878.cram", 60);
+            const p = url.parse(signedUrl);
+            expect(p.query.length).to.be.greaterThan(0);
+            console.log(signedUrl);
+        }
+    });
+});
