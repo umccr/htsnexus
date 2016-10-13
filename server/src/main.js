@@ -20,7 +20,7 @@ if (program.args.length != 1) {
 
 if (program.credentials) {
     let credentials = JSON.parse(fs.readFileSync(program.credentials));
-    require('azure').initialize(credentials);
+    require('./azure').initialize(credentials);
 }
 
 var config = {
