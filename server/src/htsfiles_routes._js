@@ -120,7 +120,7 @@ class HTSRoutes {
         // TODO: decompose the byte range into 1GB (or whatever) chunks, to help
         // clients retry & resume
 
-        return ans;
+        return {htsget: ans};
     }
 
     getReads(request, dxjob, _) {
@@ -151,7 +151,7 @@ class HTSRoutes {
                                "&start=" + genomicRange.lo + "&end=" + genomicRange.hi;
         }
 
-        return ans;
+        return {htsget: ans};
     }
 
     getVariants(request, dxjob, _) {

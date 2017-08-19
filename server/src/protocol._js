@@ -67,7 +67,7 @@ function handler(f) {
                 if (err.message) {
                     body.message = err.message;
                 }
-                rep = reply(JSON.stringify({error: body}));
+                rep = reply(JSON.stringify({htsget: {error: body}}));
                 rep.statusCode = statusCode;
                 if (err.statusCode == 500 && err.stack) {
                     request.logDetails.message = err.message;
