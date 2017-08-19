@@ -58,8 +58,10 @@ function handler(f) {
             if (err) {
                 let body = {type: "InternalError"};
                 let statusCode = 500;
-                if (err instanceof ProtocolError) {
+                if (err.errorType) {
                     body.type = err.errorType;
+                }
+                if (err.statusCode) {
                     statusCode = err.statusCode;
                 }
                 if (err.message) {
