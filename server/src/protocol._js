@@ -77,7 +77,7 @@ function handler(f) {
                 rep = reply(JSON.stringify(ans));
                 rep.statusCode = 200;
             }
-            rep.headers["content-type"] = "application/json";
+            rep.headers["content-type"] = "application/vnd.ga4gh.htsget.v0.2rc+json";
         });        
     }
 }
