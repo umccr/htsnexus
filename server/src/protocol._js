@@ -58,14 +58,16 @@ function handler(f) {
             if (err) {
                 let body = {type: "InternalError"};
                 let statusCode = 500;
-                if (err instanceof ProtocolError) {
+                if (err.errorType) {
                     body.type = err.errorType;
+                }
+                if (err.statusCode) {
                     statusCode = err.statusCode;
                 }
                 if (err.message) {
                     body.message = err.message;
                 }
-                rep = reply(JSON.stringify({error: body}));
+                rep = reply(JSON.stringify({htsget: {error: body}}));
                 rep.statusCode = statusCode;
                 if (err.statusCode == 500 && err.stack) {
                     request.logDetails.message = err.message;
@@ -75,7 +77,7 @@ function handler(f) {
                 rep = reply(JSON.stringify(ans));
                 rep.statusCode = 200;
             }
-            rep.headers["content-type"] = "application/json";
+            rep.headers["content-type"] = "application/vnd.ga4gh.htsget.v0.2rc+json";
         });        
     }
 }

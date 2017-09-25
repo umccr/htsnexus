@@ -15,9 +15,9 @@ function req(route, cb) {
         if (error) {
             return cb(error);
         }
-        expect(response.headers["content-type"]).to.match(/application\/json;?.*/);
+        expect(response.headers["content-type"]).to.match(/application\/vnd\.ga4gh\.htsget\..+\+json;?.*/);
         try {
-            response.body = JSON.parse(body);
+            response.body = JSON.parse(body).htsget;
         } catch(e) {
             return cb(new Error("Invalid JSON response: " + body));
         }

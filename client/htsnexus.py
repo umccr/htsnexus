@@ -49,12 +49,16 @@ def get_ticket(namespace, accession, format, server=DEFAULT_SERVER, genomic_rang
     if verbose:
         response_copy = deepcopy(ans)
         # don't print big base64 buffers to console...
-        for item in response_copy['urls']:
-            if item['url'].startswith('data:'):
-                delim = item['url'].index(',')
-                item['url'] = item['url'][:(delim+1)] + '[' + str(len(item['url'])-delim-1) + ' base64 characters]'
+        if 'htsget' in response_copy:
+            for item in response_copy['htsget']['urls']:
+                if item['url'].startswith('data:'):
+                    delim = item['url'].index(',')
+                    item['url'] = item['url'][:(delim+1)] + '[' + str(len(item['url'])-delim-1) + ' base64 characters]'
         print >>sys.stderr, ('Response: ' + json.dumps(response_copy, indent=2, separators=(',', ': ')))
-    return ans
+    if 'htsget' not in ans:
+        print >>sys.stderr, ("Unexpected response JSON format from server")
+        sys.exit(1)
+    return ans['htsget']
 
 def get(namespace, accession, format, verbose=False, **kwargs):
     # get ticket
