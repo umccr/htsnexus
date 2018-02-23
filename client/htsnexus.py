@@ -24,7 +24,8 @@ def genomic_range_query_string(genomic_range):
 # Contact the htsnexus server to request a "ticket" for a file or slice.
 # In particular the ticket will specify a URL at which the desired data can be
 # accessed (possibly with a byte range and auth headers).
-def get_ticket(namespace, accession, format, server=DEFAULT_SERVER, token=None, genomic_range=None, verbose=False):
+def get_ticket(namespace, accession, format, server=DEFAULT_SERVER, token=None, genomic_range=None,
+               verbose=False, insecure=False):
     # rewrite server endpoint for variants: a temporary hack so that this client
     # can continue to address the other GA4GH prototype servers while we talk
     # about how the URL endpoints should look.
@@ -42,7 +43,7 @@ def get_ticket(namespace, accession, format, server=DEFAULT_SERVER, token=None, 
     if token is not None:
         query_headers["Authorization"] = "Bearer " + token
     # issue request
-    response = requests.get(query_url, headers=query_headers)
+    response = requests.get(query_url, headers=query_headers, verify=(not insecure))
     if response.status_code != 200:
         print >>sys.stderr, ("Error: HTTP status " + str(response.status_code))
         print >>sys.stderr, response.json()
@@ -63,9 +64,9 @@ def get_ticket(namespace, accession, format, server=DEFAULT_SERVER, token=None, 
         sys.exit(1)
     return ans['htsget']
 
-def get(namespace, accession, format, verbose=False, **kwargs):
+def get(namespace, accession, format, verbose=False, insecure=False, **kwargs):
     # get ticket
-    ticket = get_ticket(namespace, accession, format, verbose=verbose, **kwargs)
+    ticket = get_ticket(namespace, accession, format, verbose=verbose, insecure=insecure, **kwargs)
 
     # pipe the raw data
     for item in ticket['urls']:
@@ -82,6 +83,8 @@ def get(namespace, accession, format, verbose=False, **kwargs):
                 for k, v in item['headers'].items():
                     curlcmd.append('-H')
                     curlcmd.append(str(k + ': ' + v))
+            if insecure:
+                curlcmd.append('--insecure')
             curlcmd.append(str(item['url']))
             if verbose:
                 print >>sys.stderr, ('Piping: ' + str(curlcmd))
@@ -101,6 +104,7 @@ def main():
     parser.add_argument('-r','--range', metavar='RANGE', type=str, help='target genomic range, seq:lo-hi or just seq')
     parser.add_argument('-t','--token', metavar='XXXX', type=str, help='API auth token')
     parser.add_argument('-v', '--verbose', action='store_true', help='verbose log to standard error')
+    parser.add_argument('-k', '--insecure', action='store_true', help='disable TLS certificate verification')
     parser.add_argument('namespace', type=str, help="accession namespace")
     parser.add_argument('accession', type=str, help="accession")
     parser.add_argument('format', type=str, nargs='?', default='BAM', choices=['BAM','bam','CRAM','cram','VCF','vcf'], help="format")
@@ -108,7 +112,8 @@ def main():
     args.format = args.format.upper()
 
     return get(args.namespace, args.accession, args.format, server=args.server,
-               token=args.token, genomic_range=args.range, verbose=args.verbose)
+               token=args.token, genomic_range=args.range, verbose=args.verbose,
+               insecure=args.insecure)
 
 if __name__ == '__main__':
    main()
