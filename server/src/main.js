@@ -28,6 +28,7 @@ var config = {
     port: parseInt(program.port),
     db: new sqlite3.Database(program.args[0], sqlite3.OPEN_READONLY)
 }
+
 Server.Start(config, (err, server) => {
     if (err) {
         throw err;
@@ -52,4 +53,3 @@ Server.Start(config, (err, server) => {
     });
     console.log(JSON.stringify({message: 'Server running at: '+ server.info.uri}));
 });
-

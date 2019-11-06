@@ -69,6 +69,8 @@ string derive_dbid(const char* name_space, const char* accession, const char* fo
 void insert_htsfile(sqlite3* dbh, const char* dbid, const char* format, const char* name_space,
                     const char* accession, const char* url, ssize_t file_size) {
 
+	ostringstream msg;
+	msg << "Inserting BAM index info to SQLite db: " << dbid;
     sqlite3_stmt *raw = 0;
     if (sqlite3_prepare_v2(dbh, "insert into htsfiles values(?,?,?,?,?,?)", -1, &raw, 0)) {
         throw runtime_error("Failed to prepare statement: insert into htsfiles...\n");

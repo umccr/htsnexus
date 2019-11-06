@@ -44,8 +44,8 @@ add_dependencies(samtools htslib)
 
 execute_process(COMMAND git describe --tags --long --dirty --always
                 OUTPUT_VARIABLE GIT_REVISION OUTPUT_STRIP_TRAILING_WHITESPACE)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGIT_REVISION=\"\\\"${GIT_REVISION}\\\"\" -pthread -std=c++11 -Wall")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGIT_REVISION=\"\\\"${GIT_REVISION}\\\"\" -g -pthread -std=c++11 -Wall")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
 
 ################################
 # Normal Libraries & Executables
@@ -54,19 +54,19 @@ include_directories(src)
 
 add_executable(htsnexus_index_bam src/htsnexus_index_bam.cc src/htsnexus_index_util.cc)
 add_dependencies(htsnexus_index_bam htslib)
-target_link_libraries(htsnexus_index_bam libhts sqlite3 z lzma bz2 curl crypto)
+target_link_libraries(htsnexus_index_bam libhts sqlite3 z lzma bz2 curl)
 
 add_executable(htsnexus_index_cram src/htsnexus_index_cram.cc src/htsnexus_index_util.cc)
 add_dependencies(htsnexus_index_cram htslib samtools)
-target_link_libraries(htsnexus_index_cram libhts sqlite3 z lzma bz2 curl crypto)
+target_link_libraries(htsnexus_index_cram libhts sqlite3 z lzma bz2 curl)
 
 add_executable(bgzip_lines src/bgzip_lines.cc)
 add_dependencies(bgzip_lines htslib)
-target_link_libraries(bgzip_lines libhts z lzma bz2 curl crypto)
+target_link_libraries(bgzip_lines libhts z lzma bz2 curl)
 
 add_executable(htsnexus_index_vcf src/htsnexus_index_vcf.cc src/htsnexus_index_util.cc)
 add_dependencies(htsnexus_index_vcf htslib)
-target_link_libraries(htsnexus_index_vcf libhts sqlite3 z lzma bz2 curl crypto)
+target_link_libraries(htsnexus_index_vcf libhts sqlite3 z lzma bz2 curl)
 
 install(TARGETS htsnexus_index_bam htsnexus_index_cram bgzip_lines htsnexus_index_vcf DESTINATION bin)
 

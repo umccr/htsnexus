@@ -262,6 +262,7 @@ int main(int argc, char* argv[]) {
 
     // determine the database ID for this file
     string dbid = derive_dbid(name_space, accession, "bam", fn, url);
+	cout << "Derived database string connection is: " << dbid << endl;
 
     // open/create the database
     shared_ptr<sqlite3> dbh = open_database(db);
@@ -270,6 +271,7 @@ int main(int argc, char* argv[]) {
     if (sqlite3_exec(dbh.get(), "begin", 0, 0, 0)) {
         throw runtime_error("failed to begin transaction...");
     }
+	cout << "master transaction finished " << endl;
 
     // insert the basic htsfiles entry
     insert_htsfile(dbh.get(), dbid.c_str(), "bam", name_space, accession, url, file_size);
